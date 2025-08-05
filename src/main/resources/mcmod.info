@@ -1,0 +1,16 @@
+[
+{
+  "modid": "ctsetbonus",
+  "name": "CTSetBonus",
+  "description": "Set Bonus & CraftTweaker integration",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Mahghuuuls"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
