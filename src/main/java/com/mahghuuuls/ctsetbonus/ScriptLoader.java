@@ -8,7 +8,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber
-public final class SetBonusScriptQueue {
+public final class ScriptLoader {
 	private static final List<Runnable> QUEUE = new ArrayList<>();
 
 	public static void enqueue(Runnable r) {

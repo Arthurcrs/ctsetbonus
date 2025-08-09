@@ -2,11 +2,13 @@ package com.mahghuuuls.ctsetbonus;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Locale;
 
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
 import com.fantasticsource.setbonus.common.bonuselements.ABonusElement;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementAttributeModifier;
+import com.fantasticsource.setbonus.common.bonuselements.BonusElementEnchantment;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementPotionEffect;
 import com.fantasticsource.setbonus.common.bonusrequirements.ABonusRequirement;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Equip;
@@ -30,26 +32,26 @@ public class SetTweaks {
 
 	@ZenMethod
 	public static void addEquipToSet(String setName, String slotString, String equipRK) {
-		SetBonusScriptQueue.enqueue(() -> addEquipToSetCore(setName, slotString, equipRK));
+		ScriptLoader.enqueue(() -> addEquipToSetCore(setName, slotString, equipRK));
 
 	}
 
 	@ZenMethod
 	public static void addEquipToSet(String setName, int slotInt, String equipRK) {
-		SetBonusScriptQueue.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRK));
+		ScriptLoader.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRK));
 	}
 
 	@ZenMethod
 	public static void addEquipToSet(String setName, String slotString, String[] equipsRK) {
 		for (String equipRK : equipsRK) {
-			SetBonusScriptQueue.enqueue(() -> addEquipToSetCore(setName, slotString, equipRK));
+			ScriptLoader.enqueue(() -> addEquipToSetCore(setName, slotString, equipRK));
 		}
 	}
 
 	@ZenMethod
 	public static void addEquipToSet(String setName, int slotInt, String[] equipsRK) {
 		for (String equipRK : equipsRK) {
-			SetBonusScriptQueue.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRK));
+			ScriptLoader.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRK));
 		}
 	}
 
@@ -93,19 +95,18 @@ public class SetTweaks {
 
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName) {
-		SetBonusScriptQueue.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, -1, 1));
+		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, -1, 1));
 	}
 
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName, int numberOfParts) {
-		SetBonusScriptQueue.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, 1));
+		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, 1));
 	}
 
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
-		SetBonusScriptQueue
-				.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, discoveryMode));
+		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, discoveryMode));
 	}
 
 	private static void addBonusToSetCore(String bonusID, String bonusDescription, String setName, int numberOfParts,
@@ -113,7 +114,11 @@ public class SetTweaks {
 		if (isLogicalClient()) {
 			return;
 		}
-		discoveryMode = clampDiscovery(discoveryMode);
+
+		if (discoveryMode < 0 || discoveryMode > 2) {
+			CraftTweakerAPI
+					.logWarning("CTSetBonus: discovery mode " + discoveryMode + " is outside 0..2; attempting as-is.");
+		}
 		String setId = setName.replace(" ", "");
 
 		Set targetSet = null;
@@ -174,12 +179,12 @@ public class SetTweaks {
 
 	@ZenMethod
 	public static void addPotionEffectToBonus(String bonusID, String effectRK, int level) {
-		SetBonusScriptQueue.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRK, level, Integer.MAX_VALUE, 0));
+		ScriptLoader.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRK, level, Integer.MAX_VALUE, 0));
 	}
 
 	@ZenMethod
 	public static void addPotionEffectToBonus(String bonusID, String effectRK, int level, int duration, int interval) {
-		SetBonusScriptQueue.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRK, level, duration, interval));
+		ScriptLoader.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRK, level, duration, interval));
 	}
 
 	private static void addPotionEffectToBonusCore(String bonusID, String effectRK, int level, int duration,
@@ -223,7 +228,7 @@ public class SetTweaks {
 	@ZenMethod
 	public static void addAttributeModToBonus(String bonusID, String attribute, double amount, String operation) {
 		int operationParsed = parseOperation(operation);
-		SetBonusScriptQueue.enqueue(() -> addAttributeModToBonusCore(bonusID, attribute, amount, operationParsed));
+		ScriptLoader.enqueue(() -> addAttributeModToBonusCore(bonusID, attribute, amount, operationParsed));
 	}
 
 	private static void addAttributeModToBonusCore(String bonusID, String attribute, double amount,
@@ -261,17 +266,98 @@ public class SetTweaks {
 	// ADD ENCHANTMENT ELEMENT TO BONUS
 
 	@ZenMethod
-	public static void addEnchantmentToBonus(String bonusID, String slotString, int level) {
-		SetBonusScriptQueue.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, level, 0));
+	public static void addEnchantmentToBonus(String bonusID, int slotInt, String enchantRK, int level) {
+		ScriptLoader
+				.enqueue(() -> addEnchantmentToBonusCore(bonusID, Integer.toString(slotInt), "", enchantRK, level, 0));
 	}
 
 	@ZenMethod
-	public static void addEnchantmentToBonus(String bonusID, String slotString, int level, int mode) {
-		SetBonusScriptQueue.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, level, mode));
+	public static void addEnchantmentToBonus(String bonusID, String slotString, String enchantRK, int level) {
+		ScriptLoader.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, "", enchantRK, level, 0));
 	}
 
-	private static void addEnchantmentToBonusCore(String bonusID, String slotString, int level, int mode) {
-		// TODO
+	@ZenMethod
+	public static void addEnchantmentToBonus(String bonusID, String slotSpec, String itemRK, String enchantRK,
+			int level, int mode) {
+		ScriptLoader.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotSpec, itemRK, enchantRK, level, mode));
+	}
+
+	private static void addEnchantmentToBonusCore(String bonusID, String slotSpec, String itemRK, String enchantRK,
+			int level, int mode) {
+		if (isLogicalClient())
+			return;
+
+		ServerBonus serverBonus = findServerBonus(bonusID);
+		if (serverBonus == null) {
+			CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusID + "' not found. Create/link it first.");
+			return;
+		}
+
+		String raw = slotSpec == null ? "" : slotSpec.trim();
+		if (raw.contains("|")) {
+			CraftTweakerAPI.logError(
+					"CTSetBonus: multi-slot specs are not supported. " + "Call addEnchantmentToBonus once per slot.");
+			return;
+		}
+
+		String selector;
+		if (itemRK != null && !itemRK.isEmpty()) {
+			Equip ensured = getOrAddEquipment(itemRK);
+			if (ensured == null) {
+				CraftTweakerAPI.logError("CTSetBonus: unknown item '" + itemRK + "' for enchant target.");
+				return;
+			}
+			String equipId = getEquipIdFromRK(itemRK);
+			String lhs = raw.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+			selector = lhs + "=" + equipId;
+		} else {
+			int eqIdx = raw.indexOf('=');
+			if (eqIdx >= 0) {
+				CraftTweakerAPI.logWarning("CTSetBonus: '=' found in slot but no itemRK provided; "
+						+ "ignoring RHS and targeting the slot only.");
+				raw = raw.substring(0, eqIdx).trim();
+			}
+			selector = raw.toLowerCase(Locale.ROOT);
+		}
+
+		SlotData sd = SlotData.getInstance(selector, SetBonusData.SERVER_DATA);
+		if (sd == null) {
+			CraftTweakerAPI.logError("CTSetBonus: invalid slot selector '" + selector + "'. "
+					+ "Use 'head', 'chest', 'legs', 'feet', 'mainhand', 'offhand', a number, or 'slot=modid:item'.");
+			return;
+		}
+
+		String token = enchantRK + "." + level + "." + mode;
+		String line = bonusID + ", " + selector + ", " + token;
+
+		BonusElementEnchantment elem = BonusElementEnchantment.getInstance(line, SetBonusData.SERVER_DATA);
+		if (elem == null) {
+			CraftTweakerAPI.logWarning("CTSetBonus: enchant parse failed for '" + line + "'. Retrying with mode=0.");
+			String retry = bonusID + ", " + selector + ", " + enchantRK + "." + level + ".0";
+			elem = BonusElementEnchantment.getInstance(retry, SetBonusData.SERVER_DATA);
+			if (elem == null) {
+				CraftTweakerAPI.logError("CTSetBonus: enchant parse still failed with fallback. Line: " + retry);
+				return;
+			}
+		}
+
+		if (!attachElement(serverBonus, elem)) {
+			CraftTweakerAPI.logError("CTSetBonus: could not attach enchantment element to bonus '" + bonusID + "'");
+			return;
+		}
+
+		CraftTweakerAPI.logInfo("CTSetBonus: Added enchant " + enchantRK + " (lvl=" + level + ", mode=" + mode
+				+ ") to bonus '" + bonusID + "' targeting '" + selector + "'");
+	}
+
+	// DEBUG
+
+	@ZenMethod
+	public static void debugDATA() {
+		Side side = FMLCommonHandler.instance().getEffectiveSide();
+		CraftTweakerAPI.logInfo("CTSetBonus DEBUG (" + side + ") sets=" + SetBonusData.SERVER_DATA.sets.size()
+				+ ", equips=" + SetBonusData.SERVER_DATA.equipment.size() + ", bonuses="
+				+ SetBonusData.SERVER_DATA.bonuses.size());
 	}
 
 	// HELPERS
@@ -401,20 +487,6 @@ public class SetTweaks {
 				return (ServerBonus) bonus;
 		}
 		return null;
-	}
-
-	private static int clampDiscovery(int m) {
-		return m < 0 ? 0 : m > 2 ? 2 : m;
-	}
-
-	// DEBUG
-
-	@ZenMethod
-	public static void debugDATA() {
-		Side side = FMLCommonHandler.instance().getEffectiveSide();
-		CraftTweakerAPI.logInfo("CTSetBonus DEBUG (" + side + ") sets=" + SetBonusData.SERVER_DATA.sets.size()
-				+ ", equips=" + SetBonusData.SERVER_DATA.equipment.size() + ", bonuses="
-				+ SetBonusData.SERVER_DATA.bonuses.size());
 	}
 
 }

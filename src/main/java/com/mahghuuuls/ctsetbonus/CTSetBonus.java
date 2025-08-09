@@ -15,6 +15,6 @@ public class CTSetBonus {
 
 	@Mod.EventHandler
 	public void onServerStarting(FMLServerStartingEvent event) {
-		SetBonusScriptQueue.flushOnServerStart(event.getServer());
+		ScriptLoader.flushOnServerStart(event.getServer());
 	}
 }
