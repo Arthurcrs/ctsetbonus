@@ -6,6 +6,7 @@ import java.util.List;
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
 import com.fantasticsource.setbonus.common.bonuselements.ABonusElement;
+import com.fantasticsource.setbonus.common.bonuselements.BonusElementAttributeModifier;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementPotionEffect;
 import com.fantasticsource.setbonus.common.bonusrequirements.ABonusRequirement;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Equip;
@@ -112,7 +113,7 @@ public class SetTweaks {
 		if (isLogicalClient()) {
 			return;
 		}
-
+		discoveryMode = clampDiscovery(discoveryMode);
 		String setId = setName.replace(" ", "");
 
 		Set targetSet = null;
@@ -188,15 +189,9 @@ public class SetTweaks {
 			return;
 		}
 
-		ServerBonus serverBonus = null;
-		for (Bonus b : SetBonusData.SERVER_DATA.bonuses) {
-			if (bonusID.equals(b.id) && b instanceof ServerBonus) {
-				serverBonus = (ServerBonus) b;
-				break;
-			}
-		}
+		ServerBonus serverBonus = findServerBonus(bonusID);
 		if (serverBonus == null) {
-			CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusID + "' not found. Create/link the bonus first.");
+			CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusID + "' not found. Create/link it first.");
 			return;
 		}
 
@@ -206,7 +201,8 @@ public class SetTweaks {
 		String effectToken = effectRK + "." + amp + "." + durTicks + "." + intTicks;
 
 		String parseableBonusElement = bonusID + ", " + effectToken;
-		BonusElementPotionEffect bonusElement = BonusElementPotionEffect.getInstance(parseableBonusElement, SetBonusData.SERVER_DATA);
+		BonusElementPotionEffect bonusElement = BonusElementPotionEffect.getInstance(parseableBonusElement,
+				SetBonusData.SERVER_DATA);
 		if (bonusElement == null) {
 			CraftTweakerAPI.logError(
 					"CTSetBonus: failed to parse potion effect '" + effectToken + "' for bonus '" + bonusID + "'");
@@ -225,23 +221,52 @@ public class SetTweaks {
 	// ADD ATTRIBUTE MOD ELEMENT TO BONUS
 
 	@ZenMethod
-	public static void addAttributeModToBonus(String bonusID, String attribute, String operation) {
-		SetBonusScriptQueue.enqueue(() -> addAttributeModToBonusCore(bonusID, attribute, operation));
+	public static void addAttributeModToBonus(String bonusID, String attribute, double amount, String operation) {
+		int operationParsed = parseOperation(operation);
+		SetBonusScriptQueue.enqueue(() -> addAttributeModToBonusCore(bonusID, attribute, amount, operationParsed));
 	}
 
-	private static void addAttributeModToBonusCore(String bonusID, String attribute, String operation) {
-		// TODO
+	private static void addAttributeModToBonusCore(String bonusID, String attribute, double amount,
+			int operationParsed) {
+
+		if (isLogicalClient()) {
+			return;
+		}
+
+		ServerBonus serverBonus = findServerBonus(bonusID);
+		if (serverBonus == null) {
+			CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusID + "' not found. Create/link it first.");
+			return;
+		}
+
+		int op = (operationParsed < 0 || operationParsed > 2) ? 0 : operationParsed;
+		String spec = attribute + " = " + amount + (op != 0 ? (" @ " + op) : "");
+		String line = bonusID + ", " + spec;
+
+		BonusElementAttributeModifier elem = BonusElementAttributeModifier.getInstance(line, SetBonusData.SERVER_DATA);
+		if (elem == null) {
+			CraftTweakerAPI.logError("CTSetBonus: failed to build attribute element from '" + line + "'");
+			return;
+		}
+
+		if (!attachElement(serverBonus, elem)) {
+			CraftTweakerAPI.logError("CTSetBonus: could not attach attribute element to bonus '" + bonusID + "'");
+			return;
+		}
+
+		CraftTweakerAPI.logInfo("CTSetBonus: Added attribute " + attribute + " = " + amount + " @ " + op + " to bonus '"
+				+ bonusID + "'");
 	}
 
 	// ADD ENCHANTMENT ELEMENT TO BONUS
 
 	@ZenMethod
-
-	private static void addEnchantmentToBonus(String bonusID, String slotString, int level) {
+	public static void addEnchantmentToBonus(String bonusID, String slotString, int level) {
 		SetBonusScriptQueue.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, level, 0));
 	}
 
-	private static void addEnchantmentToBonus(String bonusID, String slotString, int level, int mode) {
+	@ZenMethod
+	public static void addEnchantmentToBonus(String bonusID, String slotString, int level, int mode) {
 		SetBonusScriptQueue.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, level, mode));
 	}
 
@@ -284,7 +309,7 @@ public class SetTweaks {
 	}
 
 	private static boolean createSetWithSlot(String setId, String setName, String slotToken) {
-		String line = setId + ", " + setName + ", " + slotToken; // cfg-style: id, name, slot = equipId
+		String line = setId + ", " + setName + ", " + slotToken;
 		Set created = Set.getInstance(line, SetBonusData.SERVER_DATA);
 		if (created == null)
 			return false;
@@ -327,7 +352,6 @@ public class SetTweaks {
 	@SuppressWarnings("unchecked")
 	private static boolean attachElement(ServerBonus serverBonus, ABonusElement elem) {
 		try {
-			// try common field name first
 			Field f = Bonus.class.getDeclaredField("elements");
 			f.setAccessible(true);
 			((List<ABonusElement>) f.get(serverBonus)).add(elem);
@@ -346,6 +370,41 @@ public class SetTweaks {
 			CraftTweakerAPI.logError("CTSetBonus: reflection error while attaching element", t);
 			return false;
 		}
+	}
+
+	private static int parseOperation(String op) {
+		if (op == null)
+			return 0;
+		switch (op.trim().toLowerCase(java.util.Locale.ROOT)) {
+		case "add":
+			return 0; // + amount
+		case "mult_base":
+			return 1; // + base * amount
+		case "mult_total":
+			return 2; // * (1 + amount)
+		default:
+			try {
+				int n = Integer.parseInt(op);
+				if (n >= 0 && n <= 2)
+					return n;
+			} catch (NumberFormatException ignored) {
+			}
+			CraftTweakerAPI.logError("CTSetBonus: unknown attribute operation '" + op
+					+ "'. Use add | mult_base | mult_total (defaulting to add).");
+			return 0;
+		}
+	}
+
+	private static ServerBonus findServerBonus(String bonusID) {
+		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
+			if (bonusID.equals(bonus.id) && bonus instanceof ServerBonus)
+				return (ServerBonus) bonus;
+		}
+		return null;
+	}
+
+	private static int clampDiscovery(int m) {
+		return m < 0 ? 0 : m > 2 ? 2 : m;
 	}
 
 	// DEBUG
