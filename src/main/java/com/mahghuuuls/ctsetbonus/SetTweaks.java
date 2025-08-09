@@ -1,0 +1,126 @@
+package com.mahghuuuls.ctsetbonus;
+
+import com.fantasticsource.setbonus.SetBonusData;
+import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Equip;
+import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Set;
+import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.SlotData;
+
+import crafttweaker.CraftTweakerAPI;
+import crafttweaker.annotations.ZenRegister;
+import stanhebben.zenscript.annotations.ZenClass;
+import stanhebben.zenscript.annotations.ZenMethod;
+
+@ZenRegister
+@ZenClass("ctsetbonus.SetTweaks")
+public class SetTweaks {
+
+	// ADD EQUIP TO SET
+
+	@ZenMethod
+	public static void addEquipToSet(String setName, String slotString, String equipRK) {
+		addEquipToSetCore(setName, slotString, equipRK);
+	}
+
+	@ZenMethod
+	public static void addEquipToSet(String setName, int slotInt, String equipRK) {
+		addEquipToSetCore(setName, Integer.toString(slotInt), equipRK);
+	}
+
+	@ZenMethod
+	public static void addEquipToSet(String setName, String slotString, String[] equipsRL) {
+		for (String equipRL : equipsRL) {
+			addEquipToSet(setName, slotString, equipRL);
+		}
+	}
+
+	@ZenMethod
+	public static void addEquipToSet(String setName, int slotInt, String[] equipsRL) {
+		for (String equipRL : equipsRL) {
+			addEquipToSet(setName, slotInt, equipRL);
+		}
+	}
+
+	// HELPERS
+
+	private static Equip getOrAddEquipment(String equipRK) {
+		String equipId = getEquipIdFromRK(equipRK);
+		Equip targetEquip = null;
+		for (Equip equip : SetBonusData.SERVER_DATA.equipment) {
+			if (equipId.equals(equip.id)) {
+				return equip;
+			}
+		}
+		if (targetEquip == null) {
+			String parsableEquip = equipId + ", " + equipRK;
+			Equip createdEquip = Equip.getInstance(parsableEquip);
+			if (createdEquip != null) {
+				SetBonusData.SERVER_DATA.equipment.add(createdEquip);
+				CraftTweakerAPI.logInfo("CTSetBonus: New equip added : " + parsableEquip);
+			}
+			targetEquip = createdEquip;
+		}
+		return targetEquip;
+	}
+
+	private static String getEquipIdFromRK(String equipRK) {
+		return equipRK.replace(":", "_").replace("@", "_");
+	}
+
+	private static void addEquipToSetCore(String setName, String slotPart, String equipRK) {
+		String setId = setName.replace(" ", "");
+		String equipId = getEquipIdFromRK(equipRK);
+
+		Equip eq = getOrAddEquipment(equipRK);
+		if (eq == null) {
+			CraftTweakerAPI.logError("CTSetBonus: bad equip registry key '" + equipRK + "'");
+			return;
+		}
+
+		Set targetSet = findSetById(setId);
+
+		String slotToken = slotPart + " = " + equipId;
+
+		// if set is missing create the set; otherwise just add the slot
+		if (targetSet == null) {
+			if (!createSetWithSlot(setId, setName, slotToken)) {
+				CraftTweakerAPI.logError("CTSetBonus: failed to create set '" + setId + "'");
+				return;
+			}
+			CraftTweakerAPI.logInfo("CTSetBonus: New set added " + setName + " (" + setId + ")");
+			CraftTweakerAPI.logInfo("CTSetBonus: Added " + equipRK + " to " + setName + " at slot " + slotPart);
+			return;
+		}
+
+		if (!addSlotToSet(targetSet, slotToken)) {
+			CraftTweakerAPI.logError("CTSetBonus: bad slot token '" + slotToken + "'");
+			return;
+		}
+		CraftTweakerAPI.logInfo("CTSetBonus: Added " + equipRK + " at slot " + slotPart + " to set " + setName);
+	}
+
+	private static Set findSetById(String setId) {
+		for (Set s : SetBonusData.SERVER_DATA.sets) {
+			if (setId.equals(s.id))
+				return s;
+		}
+		return null;
+	}
+
+	private static boolean createSetWithSlot(String setId, String setName, String slotToken) {
+		String line = setId + ", " + setName + ", " + slotToken; // cfg-style: id, name, slot = equipId
+		Set created = Set.getInstance(line, SetBonusData.SERVER_DATA);
+		if (created == null)
+			return false;
+		SetBonusData.SERVER_DATA.sets.add(created);
+		return true;
+	}
+
+	private static boolean addSlotToSet(Set set, String slotToken) {
+		SlotData sd = SlotData.getInstance(slotToken, SetBonusData.SERVER_DATA);
+		if (sd == null)
+			return false;
+		set.slotData.add(sd);
+		return true;
+	}
+
+}
