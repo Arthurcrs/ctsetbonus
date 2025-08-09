@@ -1,7 +1,12 @@
 package com.mahghuuuls.ctsetbonus;
 
+import java.lang.reflect.Field;
+import java.util.List;
+
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
+import com.fantasticsource.setbonus.common.bonuselements.ABonusElement;
+import com.fantasticsource.setbonus.common.bonuselements.BonusElementPotionEffect;
 import com.fantasticsource.setbonus.common.bonusrequirements.ABonusRequirement;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Equip;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Set;
@@ -24,42 +29,85 @@ public class SetTweaks {
 
 	@ZenMethod
 	public static void addEquipToSet(String setName, String slotString, String equipRK) {
-		addEquipToSetCore(setName, slotString, equipRK);
+		SetBonusScriptQueue.enqueue(() -> addEquipToSetCore(setName, slotString, equipRK));
+
 	}
 
 	@ZenMethod
 	public static void addEquipToSet(String setName, int slotInt, String equipRK) {
-		addEquipToSetCore(setName, Integer.toString(slotInt), equipRK);
+		SetBonusScriptQueue.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRK));
 	}
 
 	@ZenMethod
-	public static void addEquipToSet(String setName, String slotString, String[] equipsRL) {
-		for (String equipRL : equipsRL) {
-			addEquipToSet(setName, slotString, equipRL);
+	public static void addEquipToSet(String setName, String slotString, String[] equipsRK) {
+		for (String equipRK : equipsRK) {
+			SetBonusScriptQueue.enqueue(() -> addEquipToSetCore(setName, slotString, equipRK));
 		}
 	}
 
 	@ZenMethod
-	public static void addEquipToSet(String setName, int slotInt, String[] equipsRL) {
-		for (String equipRL : equipsRL) {
-			addEquipToSet(setName, slotInt, equipRL);
+	public static void addEquipToSet(String setName, int slotInt, String[] equipsRK) {
+		for (String equipRK : equipsRK) {
+			SetBonusScriptQueue.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRK));
 		}
+	}
+
+	private static void addEquipToSetCore(String setName, String slotPart, String equipRK) {
+		if (isLogicalClient()) {
+			return;
+		}
+
+		String setId = setName.replace(" ", "");
+		String equipId = getEquipIdFromRK(equipRK);
+
+		Equip eq = getOrAddEquipment(equipRK);
+		if (eq == null) {
+			CraftTweakerAPI.logError("CTSetBonus: bad equip registry key '" + equipRK + "'");
+			return;
+		}
+
+		Set targetSet = findSetById(setId);
+
+		String slotToken = slotPart + " = " + equipId;
+
+		// if set is missing create the set; otherwise just add the slot
+		if (targetSet == null) {
+			if (!createSetWithSlot(setId, setName, slotToken)) {
+				CraftTweakerAPI.logError("CTSetBonus: failed to create set '" + setId + "'");
+				return;
+			}
+			CraftTweakerAPI.logInfo("CTSetBonus: New set added " + setName + " (" + setId + ")");
+			CraftTweakerAPI.logInfo("CTSetBonus: Added " + equipRK + " to " + setName + " at slot " + slotPart);
+			return;
+		}
+
+		if (!addSlotToSet(targetSet, slotToken)) {
+			CraftTweakerAPI.logError("CTSetBonus: bad slot token '" + slotToken + "'");
+			return;
+		}
+		CraftTweakerAPI.logInfo("CTSetBonus: Added " + equipRK + " at slot " + slotPart + " to set " + setName);
 	}
 
 	// ADD BONUS TO SET
 
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName) {
-		addBonusToSet(bonusID, bonusDescription, setName, -1, 1); // require full set and bonus always visible
+		SetBonusScriptQueue.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, -1, 1));
 	}
 
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName, int numberOfParts) {
-		addBonusToSet(bonusID, bonusDescription, setName, numberOfParts, 1); // bonus always visible
+		SetBonusScriptQueue.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, 1));
 	}
 
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName, int numberOfParts,
+			int discoveryMode) {
+		SetBonusScriptQueue
+				.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, discoveryMode));
+	}
+
+	private static void addBonusToSetCore(String bonusID, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
 		if (isLogicalClient()) {
 			return;
@@ -121,6 +169,86 @@ public class SetTweaks {
 				+ (numberOfParts > 0 ? numberOfParts : "FULL") + ", mode=" + discoveryMode + ")");
 	}
 
+	// ADD POTION EFFECT ELEMENT TO BONUS
+
+	@ZenMethod
+	public static void addPotionEffectToBonus(String bonusID, String effectRK, int level) {
+		SetBonusScriptQueue.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRK, level, Integer.MAX_VALUE, 0));
+	}
+
+	@ZenMethod
+	public static void addPotionEffectToBonus(String bonusID, String effectRK, int level, int duration, int interval) {
+		SetBonusScriptQueue.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRK, level, duration, interval));
+	}
+
+	private static void addPotionEffectToBonusCore(String bonusID, String effectRK, int level, int duration,
+			int interval) {
+
+		if (isLogicalClient()) {
+			return;
+		}
+
+		ServerBonus serverBonus = null;
+		for (Bonus b : SetBonusData.SERVER_DATA.bonuses) {
+			if (bonusID.equals(b.id) && b instanceof ServerBonus) {
+				serverBonus = (ServerBonus) b;
+				break;
+			}
+		}
+		if (serverBonus == null) {
+			CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusID + "' not found. Create/link the bonus first.");
+			return;
+		}
+
+		int amp = Math.max(0, level);
+		int durTicks = Math.max(0, duration);
+		int intTicks = Math.max(0, interval);
+		String effectToken = effectRK + "." + amp + "." + durTicks + "." + intTicks;
+
+		String parseableBonusElement = bonusID + ", " + effectToken;
+		BonusElementPotionEffect bonusElement = BonusElementPotionEffect.getInstance(parseableBonusElement, SetBonusData.SERVER_DATA);
+		if (bonusElement == null) {
+			CraftTweakerAPI.logError(
+					"CTSetBonus: failed to parse potion effect '" + effectToken + "' for bonus '" + bonusID + "'");
+			return;
+		}
+
+		if (!attachElement(serverBonus, bonusElement)) {
+			CraftTweakerAPI.logError("CTSetBonus: could not attach potion element to bonus '" + bonusID + "'");
+			return;
+		}
+
+		CraftTweakerAPI.logInfo("CTSetBonus: Added potion " + effectRK + " (lvl=" + amp + ", dur=" + durTicks
+				+ ", interval=" + intTicks + ") to bonus '" + bonusID + "'");
+	}
+
+	// ADD ATTRIBUTE MOD ELEMENT TO BONUS
+
+	@ZenMethod
+	public static void addAttributeModToBonus(String bonusID, String attribute, String operation) {
+		SetBonusScriptQueue.enqueue(() -> addAttributeModToBonusCore(bonusID, attribute, operation));
+	}
+
+	private static void addAttributeModToBonusCore(String bonusID, String attribute, String operation) {
+		// TODO
+	}
+
+	// ADD ENCHANTMENT ELEMENT TO BONUS
+
+	@ZenMethod
+
+	private static void addEnchantmentToBonus(String bonusID, String slotString, int level) {
+		SetBonusScriptQueue.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, level, 0));
+	}
+
+	private static void addEnchantmentToBonus(String bonusID, String slotString, int level, int mode) {
+		SetBonusScriptQueue.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, level, mode));
+	}
+
+	private static void addEnchantmentToBonusCore(String bonusID, String slotString, int level, int mode) {
+		// TODO
+	}
+
 	// HELPERS
 
 	private static Equip getOrAddEquipment(String equipRK) {
@@ -145,42 +273,6 @@ public class SetTweaks {
 
 	private static String getEquipIdFromRK(String equipRK) {
 		return equipRK.replace(":", "_").replace("@", "_");
-	}
-
-	private static void addEquipToSetCore(String setName, String slotPart, String equipRK) {
-		if (isLogicalClient()) {
-			return;
-		}
-
-		String setId = setName.replace(" ", "");
-		String equipId = getEquipIdFromRK(equipRK);
-
-		Equip eq = getOrAddEquipment(equipRK);
-		if (eq == null) {
-			CraftTweakerAPI.logError("CTSetBonus: bad equip registry key '" + equipRK + "'");
-			return;
-		}
-
-		Set targetSet = findSetById(setId);
-
-		String slotToken = slotPart + " = " + equipId;
-
-		// if set is missing create the set; otherwise just add the slot
-		if (targetSet == null) {
-			if (!createSetWithSlot(setId, setName, slotToken)) {
-				CraftTweakerAPI.logError("CTSetBonus: failed to create set '" + setId + "'");
-				return;
-			}
-			CraftTweakerAPI.logInfo("CTSetBonus: New set added " + setName + " (" + setId + ")");
-			CraftTweakerAPI.logInfo("CTSetBonus: Added " + equipRK + " to " + setName + " at slot " + slotPart);
-			return;
-		}
-
-		if (!addSlotToSet(targetSet, slotToken)) {
-			CraftTweakerAPI.logError("CTSetBonus: bad slot token '" + slotToken + "'");
-			return;
-		}
-		CraftTweakerAPI.logInfo("CTSetBonus: Added " + equipRK + " at slot " + slotPart + " to set " + setName);
 	}
 
 	private static Set findSetById(String setId) {
@@ -232,12 +324,36 @@ public class SetTweaks {
 		return FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT;
 	}
 
+	@SuppressWarnings("unchecked")
+	private static boolean attachElement(ServerBonus serverBonus, ABonusElement elem) {
+		try {
+			// try common field name first
+			Field f = Bonus.class.getDeclaredField("elements");
+			f.setAccessible(true);
+			((List<ABonusElement>) f.get(serverBonus)).add(elem);
+			return true;
+		} catch (NoSuchFieldException nf) {
+			try {
+				Field f2 = Bonus.class.getDeclaredField("bonusElements");
+				f2.setAccessible(true);
+				((List<ABonusElement>) f2.get(serverBonus)).add(elem);
+				return true;
+			} catch (Throwable t2) {
+				CraftTweakerAPI.logError("CTSetBonus: could not find elements list on ServerBonus", t2);
+				return false;
+			}
+		} catch (Throwable t) {
+			CraftTweakerAPI.logError("CTSetBonus: reflection error while attaching element", t);
+			return false;
+		}
+	}
+
 	// DEBUG
 
 	@ZenMethod
-	public static void debugDump() {
-		Side eff = FMLCommonHandler.instance().getEffectiveSide();
-		CraftTweakerAPI.logInfo("CTSetBonus DEBUG (" + eff + ") sets=" + SetBonusData.SERVER_DATA.sets.size()
+	public static void debugDATA() {
+		Side side = FMLCommonHandler.instance().getEffectiveSide();
+		CraftTweakerAPI.logInfo("CTSetBonus DEBUG (" + side + ") sets=" + SetBonusData.SERVER_DATA.sets.size()
 				+ ", equips=" + SetBonusData.SERVER_DATA.equipment.size() + ", bonuses="
 				+ SetBonusData.SERVER_DATA.bonuses.size());
 	}
