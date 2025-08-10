@@ -38,30 +38,23 @@ public final class ScriptLoader {
 		}
 
 		int applied = 0;
-		for (Runnable r : batch) {
+		for (Runnable runnable : batch) {
 			try {
-				r.run();
+				runnable.run();
 				applied++;
 			} catch (Throwable t) {
 				CraftTweakerAPI.logError("CTSetBonus: deferred task failed", t);
 			}
 		}
-		synchronized (QUEUE) {
-			QUEUE.clear();
-		}
-		SetTweaks.clearSlotAccum();
 
+		SetTweaks.clearSlotAccumulators();
 		CraftTweakerAPI.logInfo("CTSetBonus: applied " + applied + " queued script actions on SERVER");
 	}
 
 	/**
-	 * Clears queue and accumulators without running them. Used on server stop to
-	 * avoid cross-world state carryover.
+	 * Clears slot accumulators.
 	 */
 	public static void resetState() {
-		synchronized (QUEUE) {
-			QUEUE.clear();
-		}
-		SetTweaks.clearSlotAccum();
+		SetTweaks.clearSlotAccumulators();
 	}
 }

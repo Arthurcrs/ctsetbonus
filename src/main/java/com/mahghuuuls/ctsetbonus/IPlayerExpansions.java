@@ -17,14 +17,14 @@ import stanhebben.zenscript.annotations.ZenMethod;
 public class IPlayerExpansions {
 
 	@ZenMethod
-	public static boolean hasSetBonus(IPlayer iPlayer, String bonusID) {
+	public static boolean hasSetBonus(IPlayer iPlayer, String bonusId) {
 		EntityPlayer player = CraftTweakerMC.getPlayer(iPlayer);
 		if (player.world.isRemote)
 			return false;
 		EntityPlayerMP playerMP = (EntityPlayerMP) player;
 
 		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
-			if (!bonusID.equals(bonus.id))
+			if (!bonusId.equals(bonus.id))
 				continue;
 			ServerBonus serverBonus = (ServerBonus) bonus;
 			return serverBonus.getBonusInstance(playerMP).active;

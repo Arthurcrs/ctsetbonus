@@ -16,7 +16,6 @@ public class CTSetBonus {
 
 	/**
 	 * Server is starting: run all deferred Zen-script actions now (server thread).
-	 * Why: guarantees consistent, server-only mutation of Set Bonus data.
 	 */
 	@Mod.EventHandler
 	public void onServerAboutToStart(FMLServerStartingEvent event) {
@@ -24,8 +23,7 @@ public class CTSetBonus {
 	}
 
 	/**
-	 * Server is stopping: drop any queued work and temp accumulators. Why: avoid
-	 * state leaking across worlds/reloads.
+	 * Server is stopping: drop any temporary accumulators.
 	 */
 	@Mod.EventHandler
 	public void onServerStopping(FMLServerStoppingEvent event) {

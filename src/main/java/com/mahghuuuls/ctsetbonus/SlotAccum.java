@@ -13,9 +13,9 @@ import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Slot
  */
 public final class SlotAccum {
 	final String setId;
-	String setName;
 	final String slotKey;
 	final LinkedHashSet<String> equipIds = new LinkedHashSet<>();
+	String setName;
 	Set setRef;
 	SlotData slotRef;
 
