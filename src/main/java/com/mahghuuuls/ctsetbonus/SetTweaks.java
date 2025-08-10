@@ -1,8 +1,10 @@
 package com.mahghuuuls.ctsetbonus;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
@@ -30,6 +32,8 @@ public class SetTweaks {
 
 	// ADD EQUIP TO SET
 
+	private static final Map<String, SlotAccum> SLOT_ACCUM = new HashMap<>();
+
 	@ZenMethod
 	public static void addEquipToSet(String setName, String slotString, String equipRK) {
 		ScriptLoader.enqueue(() -> addEquipToSetCore(setName, slotString, equipRK));
@@ -56,39 +60,91 @@ public class SetTweaks {
 	}
 
 	private static void addEquipToSetCore(String setName, String slotPart, String equipRK) {
-		if (isLogicalClient()) {
+		if (isLogicalClient())
+			return;
+
+		if (equipRK == null || equipRK.trim().isEmpty()) {
+			CraftTweakerAPI.logError("CTSetBonus: empty item registry key for set '" + setName + "'.");
 			return;
 		}
 
-		String setId = setName.replace(" ", "");
-		String equipId = getEquipIdFromRK(equipRK);
+		final String setId = setName.replace(" ", "");
+		final String slotKey = normalizeSlotKey(slotPart);
 
-		Equip eq = getOrAddEquipment(equipRK);
+		// ensure the Equip exists and get its internal id
+		Equip eq = getOrAddEquipment(equipRK.trim());
 		if (eq == null) {
 			CraftTweakerAPI.logError("CTSetBonus: bad equip registry key '" + equipRK + "'");
 			return;
 		}
+		String equipId = getEquipIdFromRK(equipRK.trim());
 
-		Set targetSet = findSetById(setId);
+		// fetch/create accumulator for this (set,slot)
+		final String accKey = setId + "|" + slotKey;
+		SlotAccum acc = SLOT_ACCUM.get(accKey);
+		if (acc == null) {
+			acc = new SlotAccum(setId, setName, slotKey);
+			acc.setRef = findSetById(setId);
+			SLOT_ACCUM.put(accKey, acc);
+		} else {
+			acc.setName = setName; // keep latest display name
+		}
 
-		String slotToken = slotPart + " = " + equipId;
-
-		// if set is missing create the set; otherwise just add the slot
-		if (targetSet == null) {
-			if (!createSetWithSlot(setId, setName, slotToken)) {
-				CraftTweakerAPI.logError("CTSetBonus: failed to create set '" + setId + "'");
-				return;
-			}
-			CraftTweakerAPI.logInfo("CTSetBonus: New set added " + setName + " (" + setId + ")");
-			CraftTweakerAPI.logInfo("CTSetBonus: Added " + equipRK + " to " + setName + " at slot " + slotPart);
+		// add this item to the OR set (deduped)
+		boolean changed = acc.equipIds.add(equipId);
+		if (!changed && acc.setRef != null && acc.slotRef != null) {
+			// nothing new to apply
 			return;
 		}
 
-		if (!addSlotToSet(targetSet, slotToken)) {
+		// build RHS: "id1 | id2 | ..."
+		String rhs = String.join(" | ", acc.equipIds);
+		String slotToken = slotKey + " = " + rhs;
+
+		if (acc.setRef == null) {
+			// create the set WITH this slot already present
+			String setLine = setId + ", " + setName + ", " + slotToken;
+			Set created = Set.getInstance(setLine, SetBonusData.SERVER_DATA);
+			if (created == null) {
+				CraftTweakerAPI.logError("CTSetBonus: failed to create set '" + setId + "' from '" + setLine + "'");
+				return;
+			}
+			SetBonusData.SERVER_DATA.sets.add(created);
+			acc.setRef = created;
+
+			// IMPORTANT: do NOT add another SlotData here.
+			// Reuse the one that Set.getInstance(...) just created.
+			if (created.slotData.isEmpty()) {
+				CraftTweakerAPI
+						.logError("CTSetBonus: internal error: created set has no slot data for '" + slotToken + "'");
+				return;
+			}
+			// The last entry corresponds to the slot we just parsed in setLine
+			acc.slotRef = created.slotData.get(created.slotData.size() - 1);
+
+			CraftTweakerAPI.logInfo("CTSetBonus: New set added " + setName + " (" + setId + ")");
+			CraftTweakerAPI.logInfo(
+					"CTSetBonus: Added " + acc.equipIds.size() + " option(s) to " + setName + " at slot " + slotKey);
+			return;
+		}
+
+		// update existing set: remove our previous SlotData (if any), then add the
+		// merged one
+		if (acc.slotRef != null) {
+			acc.setRef.slotData.remove(acc.slotRef);
+			acc.slotRef = null;
+		}
+
+		SlotData sd = SlotData.getInstance(slotToken, SetBonusData.SERVER_DATA);
+		if (sd == null) {
 			CraftTweakerAPI.logError("CTSetBonus: bad slot token '" + slotToken + "'");
 			return;
 		}
-		CraftTweakerAPI.logInfo("CTSetBonus: Added " + equipRK + " at slot " + slotPart + " to set " + setName);
+		acc.setRef.slotData.add(sd);
+		acc.slotRef = sd;
+
+		CraftTweakerAPI.logInfo(
+				"CTSetBonus: Added " + acc.equipIds.size() + " option(s) to " + acc.setName + " at slot " + slotKey);
 	}
 
 	// ADD BONUS TO SET
@@ -266,12 +322,6 @@ public class SetTweaks {
 	// ADD ENCHANTMENT ELEMENT TO BONUS
 
 	@ZenMethod
-	public static void addEnchantmentToBonus(String bonusID, int slotInt, String enchantRK, int level) {
-		ScriptLoader
-				.enqueue(() -> addEnchantmentToBonusCore(bonusID, Integer.toString(slotInt), "", enchantRK, level, 0));
-	}
-
-	@ZenMethod
 	public static void addEnchantmentToBonus(String bonusID, String slotString, String enchantRK, int level) {
 		ScriptLoader.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, "", enchantRK, level, 0));
 	}
@@ -362,6 +412,11 @@ public class SetTweaks {
 
 	// HELPERS
 
+	/**
+	 * Ensures an Equip entry exists in SERVER_DATA for a given item registry key
+	 * (modid:item). Returns the existing one or creates/parses and registers a new
+	 * one.
+	 */
 	private static Equip getOrAddEquipment(String equipRK) {
 		String equipId = getEquipIdFromRK(equipRK);
 		Equip targetEquip = null;
@@ -382,10 +437,18 @@ public class SetTweaks {
 		return targetEquip;
 	}
 
+	/**
+	 * Converts a registry key like modid:item (and optional @meta) into Set Bonus’s
+	 * internal equip id format by replacing :/@ with _. Used to build slot =
+	 * equipId or composite RHS strings.
+	 */
 	private static String getEquipIdFromRK(String equipRK) {
 		return equipRK.replace(":", "_").replace("@", "_");
 	}
 
+	/**
+	 * Linear search for a Set in SERVER_DATA.sets by id.
+	 */
 	private static Set findSetById(String setId) {
 		for (Set s : SetBonusData.SERVER_DATA.sets) {
 			if (setId.equals(s.id))
@@ -394,27 +457,18 @@ public class SetTweaks {
 		return null;
 	}
 
-	private static boolean createSetWithSlot(String setId, String setName, String slotToken) {
-		String line = setId + ", " + setName + ", " + slotToken;
-		Set created = Set.getInstance(line, SetBonusData.SERVER_DATA);
-		if (created == null)
-			return false;
-		SetBonusData.SERVER_DATA.sets.add(created);
-		return true;
-	}
-
-	private static boolean addSlotToSet(Set set, String slotToken) {
-		SlotData sd = SlotData.getInstance(slotToken, SetBonusData.SERVER_DATA);
-		if (sd == null)
-			return false;
-		set.slotData.add(sd);
-		return true;
-	}
-
+	/**
+	 * Replaces commas in user-facing bonus names, avoiding CSV-style parser issues
+	 * when constructing config-like lines.
+	 */
 	private static String sanitizeBonusName(String name) {
 		return name == null ? "" : name.replace(",", " - ");
 	}
 
+	/**
+	 * Checks if a ServerBonus already has a SetRequirement for the same set and
+	 * piece count (full or partial). Prevents duplicate requirements.
+	 */
 	private static boolean hasSameSetRequirement(ServerBonus bonus, String setId, int desiredPieces) {
 		if (bonus == null || setId == null)
 			return false;
@@ -431,10 +485,19 @@ public class SetTweaks {
 		return false;
 	}
 
+	/**
+	 * Returns true when running on the logical client (Side.CLIENT). Used to avoid
+	 * mutating server-only data structures on the client.
+	 */
 	private static boolean isLogicalClient() {
 		return FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT;
 	}
 
+	/**
+	 * Adds a parsed bonus element (potion/attribute/enchant) to a ServerBonus using
+	 * reflection. Handles both possible field names (elements or bonusElements).
+	 * Returns success/failure.
+	 */
 	@SuppressWarnings("unchecked")
 	private static boolean attachElement(ServerBonus serverBonus, ABonusElement elem) {
 		try {
@@ -458,10 +521,15 @@ public class SetTweaks {
 		}
 	}
 
+	/**
+	 * Parses attribute modifier operation from string or number. Accepts add |
+	 * mult_base | mult_total (or 0|1|2). Defaults to add with an error log on
+	 * unknown inputs.
+	 */
 	private static int parseOperation(String op) {
 		if (op == null)
 			return 0;
-		switch (op.trim().toLowerCase(java.util.Locale.ROOT)) {
+		switch (op.trim().toLowerCase(Locale.ROOT)) {
 		case "add":
 			return 0; // + amount
 		case "mult_base":
@@ -481,12 +549,54 @@ public class SetTweaks {
 		}
 	}
 
+	/**
+	 * Finds a ServerBonus by id in SERVER_DATA.bonuses (only returns if the bonus
+	 * is actually a ServerBonus).
+	 */
 	private static ServerBonus findServerBonus(String bonusID) {
 		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
 			if (bonusID.equals(bonus.id) && bonus instanceof ServerBonus)
 				return (ServerBonus) bonus;
 		}
 		return null;
+	}
+
+	/**
+	 * Normalizes slot identifiers to canonical forms: trims, lowercases, strips
+	 * spaces; maps armor indices 39/38/37/36 to head/chest/legs/feet; leaves other
+	 * numbers or names (mainhand, offhand) as-is
+	 */
+	private static String normalizeSlotKey(String slotPart) {
+		if (slotPart == null)
+			return "";
+		String s = slotPart.trim().toLowerCase(Locale.ROOT).replace(" ", "");
+
+		try {
+			int n = Integer.parseInt(s);
+			switch (n) {
+			case 36:
+				return "feet";
+			case 37:
+				return "legs";
+			case 38:
+				return "chest";
+			case 39:
+				return "head";
+			default:
+				return s;
+			}
+		} catch (NumberFormatException ignore) {
+		}
+
+		return s;
+	}
+
+	/**
+	 * Clears the internal per-(set,slot) accumulator map used to OR-merge multiple
+	 * items into a single SlotData
+	 */
+	static void clearSlotAccum() {
+		SLOT_ACCUM.clear();
 	}
 
 }
