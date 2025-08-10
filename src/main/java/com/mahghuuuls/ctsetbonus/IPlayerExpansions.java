@@ -2,6 +2,7 @@ package com.mahghuuuls.ctsetbonus;
 
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
+import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Set;
 import com.fantasticsource.setbonus.server.ServerBonus;
 
 import crafttweaker.annotations.ZenRegister;
@@ -18,9 +19,10 @@ public class IPlayerExpansions {
 
 	@ZenMethod
 	public static boolean hasSetBonus(IPlayer iPlayer, String bonusId) {
-		EntityPlayer player = CraftTweakerMC.getPlayer(iPlayer);
-		if (player.world.isRemote)
+		if (SetTweaks.isClient()) {
 			return false;
+		}
+		EntityPlayer player = CraftTweakerMC.getPlayer(iPlayer);
 		EntityPlayerMP playerMP = (EntityPlayerMP) player;
 
 		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
@@ -30,5 +32,23 @@ public class IPlayerExpansions {
 			return serverBonus.getBonusInstance(playerMP).active;
 		}
 		return false;
+	}
+
+	@ZenMethod
+	public static int getSetPieceCount(IPlayer iPlayer, String setName) {
+		if (SetTweaks.isClient()) {
+			return 0;
+		}
+		EntityPlayer player = CraftTweakerMC.getPlayer(iPlayer);
+		EntityPlayerMP playerMP = (EntityPlayerMP) player;
+		if (playerMP == null)
+			return 0;
+		String id = setName.replace(" ", "");
+		for (Set set : SetBonusData.SERVER_DATA.sets) {
+			if (id.equals(set.id)) {
+				return set.getNumberEquipped(playerMP);
+			}
+		}
+		return 0;
 	}
 }

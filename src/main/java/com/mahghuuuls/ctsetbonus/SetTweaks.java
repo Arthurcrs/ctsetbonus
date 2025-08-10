@@ -64,7 +64,7 @@ public class SetTweaks {
 	}
 
 	private static void addEquipToSetCore(String setName, String slotPart, String equipRL) {
-		if (isLogicalClient())
+		if (isClient())
 			return;
 
 		String equipId = requireEquipIdOrLog(equipRL, setName);
@@ -105,7 +105,7 @@ public class SetTweaks {
 
 	private static void addBonusToSetCore(String bonusId, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
-		if (isLogicalClient()) {
+		if (isClient()) {
 			return;
 		}
 
@@ -185,7 +185,7 @@ public class SetTweaks {
 	private static void addPotionEffectToBonusCore(String bonusId, String effectRL, int level, int duration,
 			int interval) {
 
-		if (isLogicalClient()) {
+		if (isClient()) {
 			return;
 		}
 
@@ -228,7 +228,7 @@ public class SetTweaks {
 
 	private static void addAttributeModToBonusCore(String bonusId, String attribute, double amount, int operationCode) {
 
-		if (isLogicalClient()) {
+		if (isClient()) {
 			return;
 		}
 
@@ -273,7 +273,7 @@ public class SetTweaks {
 
 	private static void addEnchantmentToBonusCore(String bonusId, String slotSpec, String itemRL, String enchantRL,
 			int level, int mode) {
-		if (isLogicalClient())
+		if (isClient())
 			return;
 
 		ServerBonus serverBonus = findServerBonus(bonusId);
@@ -383,17 +383,6 @@ public class SetTweaks {
 	}
 
 	/**
-	 * Linear search for a Set in SERVER_DATA.sets by id.
-	 */
-	private static Set findSetById(String setId) {
-		for (Set set : SetBonusData.SERVER_DATA.sets) {
-			if (setId.equals(set.id))
-				return set;
-		}
-		return null;
-	}
-
-	/**
 	 * Replaces commas in user-facing bonus names, avoiding CSV-style parser issues
 	 * when constructing config-like lines.
 	 */
@@ -419,14 +408,6 @@ public class SetTweaks {
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * Returns true when running on the logical client (Side.CLIENT). Used to avoid
-	 * mutating server-only data structures on the client.
-	 */
-	private static boolean isLogicalClient() {
-		return FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT;
 	}
 
 	/**
@@ -625,6 +606,25 @@ public class SetTweaks {
 		slotAcc.setRef.slotData.add(slotData);
 		slotAcc.slotRef = slotData;
 		return true;
+	}
+
+	/**
+	 * Returns true when running on the logical client (Side.CLIENT). Used to avoid
+	 * mutating server-only data structures on the client.
+	 */
+	public static boolean isClient() {
+		return FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT;
+	}
+
+	/**
+	 * Linear search for a Set in SERVER_DATA.sets by id.
+	 */
+	public static Set findSetById(String setId) {
+		for (Set set : SetBonusData.SERVER_DATA.sets) {
+			if (setId.equals(set.id))
+				return set;
+		}
+		return null;
 	}
 
 }
