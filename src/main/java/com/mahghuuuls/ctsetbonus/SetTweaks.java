@@ -38,17 +38,31 @@ public class SetTweaks {
 																						// multiple item options into a
 																						// single slot entry.
 
+	/**
+	 * Add an equipment (resource location) to a set in a given slot. The slot is
+	 * entered as a String (example: "head"). If multiple equipments are added using
+	 * this method, it will all be considered as an option to that set in that slot.
+	 */
 	@ZenMethod
 	public static void addEquipToSet(String setName, String slotString, String equipRL) {
 		ScriptLoader.enqueue(() -> addEquipToSetCore(setName, slotString, equipRL));
 
 	}
 
+	/**
+	 * Add an equipment (resource location) to a set in a given slot. The slot is
+	 * entered as an integer. If multiple equipments are added using this method, it
+	 * will all be considered as an option to that set in that slot.
+	 */
 	@ZenMethod
 	public static void addEquipToSet(String setName, int slotInt, String equipRL) {
 		ScriptLoader.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRL));
 	}
 
+	/**
+	 * Add multiple equipments to a set in a given slot. The slot is entered as a
+	 * string.
+	 */
 	@ZenMethod
 	public static void addEquipToSet(String setName, String slotString, String[] equipsRL) {
 		for (String equipRL : equipsRL) {
@@ -56,6 +70,10 @@ public class SetTweaks {
 		}
 	}
 
+	/**
+	 * Add multiple equipments to a set in a given slot. The slot is entered as an
+	 * integer.
+	 */
 	@ZenMethod
 	public static void addEquipToSet(String setName, int slotInt, String[] equipsRL) {
 		for (String equipRL : equipsRL) {
@@ -63,6 +81,9 @@ public class SetTweaks {
 		}
 	}
 
+	/**
+	 * Core method used by any the "addEquipToSet" methods.
+	 */
 	private static void addEquipToSetCore(String setName, String slotPart, String equipRL) {
 		if (isClient())
 			return;
@@ -87,22 +108,37 @@ public class SetTweaks {
 
 	// ADD BONUS TO SET
 
+	/**
+	 * Add a bonus to a set with a given description. It considers that it requires
+	 * the entire set and with the discovery mode set to always be visible.
+	 */
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName) {
 		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, -1, 1));
 	}
 
+	/**
+	 * Add a bonus to a set with a given description, requiring a certain number of
+	 * pieces . It considers the discovery mode set to always be visible.
+	 */
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName, int numberOfParts) {
 		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, 1));
 	}
 
+	/**
+	 * Add a bonus to a set with a given description, requiring a certain number of
+	 * pieces . It considers the discovery mode set to always be visible.
+	 */
 	@ZenMethod
 	public static void addBonusToSet(String bonusID, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
 		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, discoveryMode));
 	}
 
+	/**
+	 * Core method used by any the "addBonusToSet" methods.
+	 */
 	private static void addBonusToSetCore(String bonusId, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
 		if (isClient()) {
@@ -172,16 +208,25 @@ public class SetTweaks {
 
 	// ADD POTION EFFECT ELEMENT TO BONUS
 
+	/**
+	 * Adds a permanent potion effect to a bonus.
+	 */
 	@ZenMethod
 	public static void addPotionEffectToBonus(String bonusID, String effectRL, int level) {
 		ScriptLoader.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRL, level, Integer.MAX_VALUE, 0));
 	}
 
+	/**
+	 * Adds a potion effect to a bonus every given ticks with a given duration.
+	 */
 	@ZenMethod
 	public static void addPotionEffectToBonus(String bonusID, String effectRL, int level, int duration, int interval) {
 		ScriptLoader.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRL, level, duration, interval));
 	}
 
+	/**
+	 * Core method used by any the "addPotionEffectToBonus" methods.
+	 */
 	private static void addPotionEffectToBonusCore(String bonusId, String effectRL, int level, int duration,
 			int interval) {
 

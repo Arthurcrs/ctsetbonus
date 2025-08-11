@@ -7,9 +7,8 @@ import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Slot
 
 /**
  * Collect multiple item candidates for a single set slot and merge them into
- * one SlotData entry using OR syntax: eg. "mainhand = idA | idB | idC". Avoids
- * creating one SlotData per item (which would require all at once). Preserves
- * insertion order and de-duplicates items.
+ * one SlotData entry using OR syntax: eg. "mainhand = idA | idB | idC".
+ * Preserves insertion order and de-duplicates items.v
  */
 public final class SlotAccum {
 	final String setId;
