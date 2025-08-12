@@ -21,70 +21,17 @@ import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Slot
 import com.fantasticsource.setbonus.server.ServerBonus;
 
 import crafttweaker.CraftTweakerAPI;
-import crafttweaker.annotations.ZenRegister;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
-import stanhebben.zenscript.annotations.ZenClass;
-import stanhebben.zenscript.annotations.ZenMethod;
 
-@ZenRegister
-@ZenClass("ctsetbonus.SetTweaks")
-public class SetTweaks {
+public class SetTweaksCore {
 
-	// ADD EQUIP TO SET
-
-	private static final Map<String, SlotAccum> SLOT_ACCUMULATORS = new HashMap<>(); // Holds per-(set,slot)
-																						// accumulators used to merge
-																						// multiple item options into a
-																						// single slot entry.
-
-	/**
-	 * Add an equipment (resource location) to a set in a given slot. The slot is
-	 * entered as a String (example: "head"). If multiple equipments are added using
-	 * this method, it will all be considered as an option to that set in that slot.
-	 */
-	@ZenMethod
-	public static void addEquipToSet(String setName, String slotString, String equipRL) {
-		ScriptLoader.enqueue(() -> addEquipToSetCore(setName, slotString, equipRL));
-
-	}
-
-	/**
-	 * Add an equipment (resource location) to a set in a given slot. The slot is
-	 * entered as an integer. If multiple equipments are added using this method, it
-	 * will all be considered as an option to that set in that slot.
-	 */
-	@ZenMethod
-	public static void addEquipToSet(String setName, int slotInt, String equipRL) {
-		ScriptLoader.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRL));
-	}
-
-	/**
-	 * Add multiple equipments to a set in a given slot. The slot is entered as a
-	 * string.
-	 */
-	@ZenMethod
-	public static void addEquipToSet(String setName, String slotString, String[] equipsRL) {
-		for (String equipRL : equipsRL) {
-			ScriptLoader.enqueue(() -> addEquipToSetCore(setName, slotString, equipRL));
-		}
-	}
-
-	/**
-	 * Add multiple equipments to a set in a given slot. The slot is entered as an
-	 * integer.
-	 */
-	@ZenMethod
-	public static void addEquipToSet(String setName, int slotInt, String[] equipsRL) {
-		for (String equipRL : equipsRL) {
-			ScriptLoader.enqueue(() -> addEquipToSetCore(setName, Integer.toString(slotInt), equipRL));
-		}
-	}
+	private static final Map<String, SlotAccum> SLOT_ACCUMULATORS = new HashMap<>();
 
 	/**
 	 * Core method used by any the "addEquipToSet" methods.
 	 */
-	private static void addEquipToSetCore(String setName, String slotPart, String equipRL) {
+	public static void addEquipToSetCore(String setName, String slotPart, String equipRL) {
 		if (isClient())
 			return;
 
@@ -106,40 +53,10 @@ public class SetTweaks {
 				+ slotAccumulator.setName + " at slot " + slotAccumulator.slotKey);
 	}
 
-	// ADD BONUS TO SET
-
-	/**
-	 * Add a bonus to a set with a given description. It considers that it requires
-	 * the entire set and with the discovery mode set to always be visible.
-	 */
-	@ZenMethod
-	public static void addBonusToSet(String bonusID, String bonusDescription, String setName) {
-		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, -1, 1));
-	}
-
-	/**
-	 * Add a bonus to a set with a given description, requiring a certain number of
-	 * pieces . It considers the discovery mode set to always be visible.
-	 */
-	@ZenMethod
-	public static void addBonusToSet(String bonusID, String bonusDescription, String setName, int numberOfParts) {
-		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, 1));
-	}
-
-	/**
-	 * Add a bonus to a set with a given description, requiring a certain number of
-	 * pieces . It considers the discovery mode set to always be visible.
-	 */
-	@ZenMethod
-	public static void addBonusToSet(String bonusID, String bonusDescription, String setName, int numberOfParts,
-			int discoveryMode) {
-		ScriptLoader.enqueue(() -> addBonusToSetCore(bonusID, bonusDescription, setName, numberOfParts, discoveryMode));
-	}
-
 	/**
 	 * Core method used by any the "addBonusToSet" methods.
 	 */
-	private static void addBonusToSetCore(String bonusId, String bonusDescription, String setName, int numberOfParts,
+	public static void addBonusToSetCore(String bonusId, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
 		if (isClient()) {
 			return;
@@ -206,28 +123,10 @@ public class SetTweaks {
 				+ (numberOfParts > 0 ? numberOfParts : "FULL") + ", mode=" + discoveryMode + ")");
 	}
 
-	// ADD POTION EFFECT ELEMENT TO BONUS
-
-	/**
-	 * Adds a permanent potion effect to a bonus.
-	 */
-	@ZenMethod
-	public static void addPotionEffectToBonus(String bonusID, String effectRL, int level) {
-		ScriptLoader.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRL, level, Integer.MAX_VALUE, 0));
-	}
-
-	/**
-	 * Adds a potion effect to a bonus every given ticks with a given duration.
-	 */
-	@ZenMethod
-	public static void addPotionEffectToBonus(String bonusID, String effectRL, int level, int duration, int interval) {
-		ScriptLoader.enqueue(() -> addPotionEffectToBonusCore(bonusID, effectRL, level, duration, interval));
-	}
-
 	/**
 	 * Core method used by any the "addPotionEffectToBonus" methods.
 	 */
-	private static void addPotionEffectToBonusCore(String bonusId, String effectRL, int level, int duration,
+	public static void addPotionEffectToBonusCore(String bonusId, String effectRL, int level, int duration,
 			int interval) {
 
 		if (isClient()) {
@@ -263,15 +162,7 @@ public class SetTweaks {
 				+ ", interval=" + intervalTicks + ") to bonus '" + bonusId + "'");
 	}
 
-	// ADD ATTRIBUTE MOD ELEMENT TO BONUS
-
-	@ZenMethod
-	public static void addAttributeModToBonus(String bonusID, String attribute, double amount, String operation) {
-		int operationCode = parseOperation(operation);
-		ScriptLoader.enqueue(() -> addAttributeModToBonusCore(bonusID, attribute, amount, operationCode));
-	}
-
-	private static void addAttributeModToBonusCore(String bonusId, String attribute, double amount, int operationCode) {
+	public static void addAttributeModToBonusCore(String bonusId, String attribute, double amount, int operationCode) {
 
 		if (isClient()) {
 			return;
@@ -303,20 +194,7 @@ public class SetTweaks {
 				+ " to bonus '" + bonusId + "'");
 	}
 
-	// ADD ENCHANTMENT ELEMENT TO BONUS
-
-	@ZenMethod
-	public static void addEnchantmentToBonus(String bonusID, String slotString, String enchantRL, int level) {
-		ScriptLoader.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotString, "", enchantRL, level, 0));
-	}
-
-	@ZenMethod
-	public static void addEnchantmentToBonus(String bonusID, String slotSpec, String itemRL, String enchantRL,
-			int level, int mode) {
-		ScriptLoader.enqueue(() -> addEnchantmentToBonusCore(bonusID, slotSpec, itemRL, enchantRL, level, mode));
-	}
-
-	private static void addEnchantmentToBonusCore(String bonusId, String slotSpec, String itemRL, String enchantRL,
+	public static void addEnchantmentToBonusCore(String bonusId, String slotSpec, String itemRL, String enchantRL,
 			int level, int mode) {
 		if (isClient())
 			return;
@@ -379,16 +257,6 @@ public class SetTweaks {
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added enchant " + enchantRL + " (lvl=" + level + ", mode=" + mode
 				+ ") to bonus '" + bonusId + "' targeting '" + slotDataSpec + "'");
-	}
-
-	// DEBUG
-
-	@ZenMethod
-	public static void debugData() {
-		Side side = FMLCommonHandler.instance().getEffectiveSide();
-		CraftTweakerAPI.logInfo("CTSetBonus DEBUG (" + side + ") sets=" + SetBonusData.SERVER_DATA.sets.size()
-				+ ", equips=" + SetBonusData.SERVER_DATA.equipment.size() + ", bonuses="
-				+ SetBonusData.SERVER_DATA.bonuses.size());
 	}
 
 	// HELPERS
@@ -488,7 +356,7 @@ public class SetTweaks {
 	 * mult_base | mult_total (or 0|1|2). Defaults to add with an error log on
 	 * unknown inputs.
 	 */
-	private static int parseOperation(String operation) {
+	public static int parseOperation(String operation) {
 		if (operation == null)
 			return 0;
 		switch (operation.trim().toLowerCase(Locale.ROOT)) {

@@ -47,7 +47,7 @@ public final class ScriptLoader {
 			}
 		}
 
-		SetTweaks.clearSlotAccumulators();
+		SetTweaksCore.clearSlotAccumulators();
 		CraftTweakerAPI.logInfo("CTSetBonus: applied " + applied + " queued script actions on SERVER");
 	}
 
@@ -55,6 +55,6 @@ public final class ScriptLoader {
 	 * Clears slot accumulators.
 	 */
 	public static void resetState() {
-		SetTweaks.clearSlotAccumulators();
+		SetTweaksCore.clearSlotAccumulators();
 	}
 }

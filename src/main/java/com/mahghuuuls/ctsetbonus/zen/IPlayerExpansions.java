@@ -1,9 +1,10 @@
-package com.mahghuuuls.ctsetbonus;
+package com.mahghuuuls.ctsetbonus.zen;
 
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Set;
 import com.fantasticsource.setbonus.server.ServerBonus;
+import com.mahghuuuls.ctsetbonus.SetTweaksCore;
 
 import crafttweaker.annotations.ZenRegister;
 import crafttweaker.api.minecraft.CraftTweakerMC;
@@ -19,7 +20,7 @@ public class IPlayerExpansions {
 
 	@ZenMethod
 	public static boolean hasSetBonus(IPlayer iPlayer, String bonusId) {
-		if (SetTweaks.isClient()) {
+		if (SetTweaksCore.isClient()) {
 			return false;
 		}
 		EntityPlayer player = CraftTweakerMC.getPlayer(iPlayer);
@@ -36,7 +37,7 @@ public class IPlayerExpansions {
 
 	@ZenMethod
 	public static int getSetPieceCount(IPlayer iPlayer, String setName) {
-		if (SetTweaks.isClient()) {
+		if (SetTweaksCore.isClient()) {
 			return 0;
 		}
 		EntityPlayer player = CraftTweakerMC.getPlayer(iPlayer);
