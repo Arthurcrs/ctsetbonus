@@ -4,7 +4,8 @@ import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Set;
 import com.fantasticsource.setbonus.server.ServerBonus;
-import com.mahghuuuls.ctsetbonus.SetTweaksCore;
+import com.mahghuuuls.ctsetbonus.util.IdFormatter;
+import com.mahghuuuls.ctsetbonus.util.SetTweaksUtil;
 
 import crafttweaker.annotations.ZenRegister;
 import crafttweaker.api.minecraft.CraftTweakerMC;
@@ -19,13 +20,16 @@ import stanhebben.zenscript.annotations.ZenMethod;
 public class IPlayerExpansions {
 
 	@ZenMethod
-	public static boolean hasSetBonus(IPlayer iPlayer, String bonusId) {
-		if (SetTweaksCore.isClient()) {
+	public static boolean hasSetBonus(IPlayer iPlayer, String bonusName) {
+		if (SetTweaksUtil.instanceIsClient()) {
 			return false;
 		}
 		EntityPlayer player = CraftTweakerMC.getPlayer(iPlayer);
 		EntityPlayerMP playerMP = (EntityPlayerMP) player;
+		if (playerMP == null)
+			return false;
 
+		String bonusId = IdFormatter.getBonusIdFromName(bonusName);
 		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
 			if (!bonusId.equals(bonus.id))
 				continue;
@@ -37,16 +41,17 @@ public class IPlayerExpansions {
 
 	@ZenMethod
 	public static int getSetPieceCount(IPlayer iPlayer, String setName) {
-		if (SetTweaksCore.isClient()) {
+		if (SetTweaksUtil.instanceIsClient()) {
 			return 0;
 		}
 		EntityPlayer player = CraftTweakerMC.getPlayer(iPlayer);
 		EntityPlayerMP playerMP = (EntityPlayerMP) player;
 		if (playerMP == null)
 			return 0;
-		String id = setName.replace(" ", "");
+
+		String setId = IdFormatter.getSetIdFromName(setName);
 		for (Set set : SetBonusData.SERVER_DATA.sets) {
-			if (id.equals(set.id)) {
+			if (setId.equals(set.id)) {
 				return set.getNumberEquipped(playerMP);
 			}
 		}

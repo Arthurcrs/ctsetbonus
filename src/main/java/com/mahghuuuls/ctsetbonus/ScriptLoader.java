@@ -3,6 +3,8 @@ package com.mahghuuuls.ctsetbonus;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mahghuuuls.ctsetbonus.slotaccumulator.SlotAccumulators;
+
 import crafttweaker.CraftTweakerAPI;
 
 /**
@@ -47,14 +49,7 @@ public final class ScriptLoader {
 			}
 		}
 
-		SetTweaksCore.clearSlotAccumulators();
+		SlotAccumulators.clear();
 		CraftTweakerAPI.logInfo("CTSetBonus: applied " + applied + " queued script actions on SERVER");
-	}
-
-	/**
-	 * Clears slot accumulators.
-	 */
-	public static void resetState() {
-		SetTweaksCore.clearSlotAccumulators();
 	}
 }

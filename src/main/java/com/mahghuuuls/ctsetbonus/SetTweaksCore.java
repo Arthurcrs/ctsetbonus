@@ -1,64 +1,70 @@
 package com.mahghuuuls.ctsetbonus;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
-import com.fantasticsource.setbonus.common.bonuselements.ABonusElement;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementAttributeModifier;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementEnchantment;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementPotionEffect;
 import com.fantasticsource.setbonus.common.bonusrequirements.ABonusRequirement;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Equip;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Set;
-import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.SetRequirement;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.SlotData;
 import com.fantasticsource.setbonus.server.ServerBonus;
+import com.mahghuuuls.ctsetbonus.slotaccumulator.SlotAccum;
+import com.mahghuuuls.ctsetbonus.slotaccumulator.SlotAccumulators;
+import com.mahghuuuls.ctsetbonus.util.IdFormatter;
+import com.mahghuuuls.ctsetbonus.util.ParseUtil;
+import com.mahghuuuls.ctsetbonus.util.ServerDataUtil;
+import com.mahghuuuls.ctsetbonus.util.SetTweaksUtil;
 
 import crafttweaker.CraftTweakerAPI;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
 
 public class SetTweaksCore {
 
-	private static final Map<String, SlotAccum> SLOT_ACCUMULATORS = new HashMap<>();
-
-	/**
-	 * Core method used by any the "addEquipToSet" methods.
-	 */
 	public static void addEquipToSetCore(String setName, String slotPart, String equipRL) {
-		if (isClient())
-			return;
 
-		String equipId = requireEquipIdOrLog(equipRL, setName);
-		if (equipId == null)
+		if (SetTweaksUtil.instanceIsClient()) {
 			return;
+		}
 
-		SlotAccum slotAccumulator = getOrCreateAccum(setName, slotPart);
-		boolean changed = slotAccumulator.equipIds.add(equipId);
+		Equip equipment = ServerDataUtil.getEquip(equipRL);
+		if (equipment == null) {
+			ServerDataUtil.addEquip(equipRL);
+		}
 
-		if (!changed && slotAccumulator.setRef != null && slotAccumulator.slotRef != null)
+		SlotAccum slotAccumulator = SlotAccumulators.getOrCreateAccum(setName, slotPart);
+		slotAccumulator.addEquip(equipRL);
+
+		String slotToken = slotAccumulator.buildSlotToken();
+
+		if (slotAccumulator.set == null) {
+			ServerDataUtil.addSet(slotAccumulator);
 			return;
+		}
 
-		String slotToken = buildSlotToken(slotAccumulator.slotKey, slotAccumulator.equipIds);
-		if (!applySlotOptions(slotAccumulator, slotToken))
+		if (slotAccumulator.slotData != null) {
+			slotAccumulator.set.slotData.remove(slotAccumulator.slotData);
+			slotAccumulator.slotData = null;
+		}
+
+		SlotData slotData = SlotData.getInstance(slotToken, SetBonusData.SERVER_DATA);
+		if (slotData == null) {
+			CraftTweakerAPI.logError("CTSetBonus: bad slot token '" + slotToken + "'");
 			return;
+		}
+		slotAccumulator.set.slotData.add(slotData);
+		slotAccumulator.slotData = slotData;
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added " + slotAccumulator.equipIds.size() + " option(s) to "
 				+ slotAccumulator.setName + " at slot " + slotAccumulator.slotKey);
 	}
 
-	/**
-	 * Core method used by any the "addBonusToSet" methods.
-	 */
-	public static void addBonusToSetCore(String bonusId, String bonusDescription, String setName, int numberOfParts,
+	public static void addBonusToSetCore(String bonusName, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
-		if (isClient()) {
+
+		if (SetTweaksUtil.instanceIsClient()) {
 			return;
 		}
 
@@ -66,165 +72,141 @@ public class SetTweaksCore {
 			CraftTweakerAPI
 					.logWarning("CTSetBonus: discovery mode " + discoveryMode + " is outside 0..2; attempting as-is.");
 		}
-		String setId = setName.replace(" ", "");
 
-		Set setRef = null;
-		for (Set set : SetBonusData.SERVER_DATA.sets) {
-			if (setId.equals(set.id)) {
-				setRef = set;
-				break;
-			}
-		}
+		Set setRef = ServerDataUtil.getSet(setName);
 		if (setRef == null) {
-			CraftTweakerAPI.logError("CTSetBonus: set '" + setName + "' not found. "
-					+ "Add at least one equip to the set before adding bonuses.");
 			return;
 		}
 
-		String requirementSpec = (numberOfParts > 0) ? (setId + "." + numberOfParts) : setId;
+		String parseableRequirement = ParseUtil.getParseableRequirement(setName, numberOfParts);
 
-		ServerBonus serverBonus = null;
-		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
-			if (bonusId.equals(bonus.id)) {
-				if (bonus instanceof ServerBonus)
-					serverBonus = (ServerBonus) bonus;
-				break;
-			}
-		}
+		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
 
 		if (serverBonus == null) {
-			String safeName = sanitizeBonusName(bonusDescription); // commas break parsing
-			String bonusSpec = bonusId + ", " + safeName + ", " + discoveryMode + ", " + requirementSpec;
-			Bonus createdBonus = Bonus.getInstance(bonusSpec, SetBonusData.SERVER_DATA);
+			String safeDescription = SetTweaksUtil.cleanBonusDescription(bonusDescription); // commas break parsing
+			String parseableBonus = ParseUtil.getParseableBonus(bonusName, bonusDescription, setName, numberOfParts,
+					discoveryMode);
+			Bonus createdBonus = Bonus.getInstance(parseableBonus, SetBonusData.SERVER_DATA);
 			if (!(createdBonus instanceof ServerBonus)) {
-				CraftTweakerAPI
-						.logError("CTSetBonus: failed to create bonus '" + bonusId + "' from '" + bonusSpec + "'");
+				CraftTweakerAPI.logError(
+						"CTSetBonus: failed to create bonus '" + bonusName + "' from '" + parseableBonus + "'");
 				return;
 			}
 			SetBonusData.SERVER_DATA.bonuses.add(createdBonus);
-			CraftTweakerAPI.logInfo("CTSetBonus: New bonus added " + bonusId + " (\"" + safeName + "\", mode="
-					+ discoveryMode + ", req=" + requirementSpec + ")");
+			CraftTweakerAPI.logInfo("CTSetBonus: New bonus added " + bonusName + " (\"" + safeDescription + "\", mode="
+					+ discoveryMode + ", req=" + parseableRequirement + ")");
 			return;
 		}
 
-		ABonusRequirement bonusReq = ABonusRequirement.parse(requirementSpec, SetBonusData.SERVER_DATA.sets);
+		ABonusRequirement bonusReq = ABonusRequirement.parse(parseableRequirement, SetBonusData.SERVER_DATA.sets);
 		if (bonusReq == null) {
-			CraftTweakerAPI.logError("CTSetBonus: bad requirement '" + requirementSpec + "'");
+			CraftTweakerAPI.logError("CTSetBonus: bad requirement '" + parseableRequirement + "'");
 			return;
 		}
 		int desiredPieces = (numberOfParts > 0) ? numberOfParts : setRef.getMaxNumber();
-		if (hasSameSetRequirement(serverBonus, setId, desiredPieces)) {
-			CraftTweakerAPI
-					.logInfo("CTSetBonus: bonus '" + bonusId + "' already has requirement '" + requirementSpec + "'");
+		if (ServerDataUtil.hasSameSetRequirement(serverBonus, setName, desiredPieces)) {
+			CraftTweakerAPI.logInfo(
+					"CTSetBonus: bonus '" + bonusName + "' already has requirement '" + parseableRequirement + "'");
 			return;
 		}
 		serverBonus.requirements.add(bonusReq);
-		CraftTweakerAPI.logInfo("CTSetBonus: Linked bonus '" + bonusId + "' -> set '" + setName + "' (pieces="
+		CraftTweakerAPI.logInfo("CTSetBonus: Linked bonus '" + bonusName + "' -> set '" + setName + "' (pieces="
 				+ (numberOfParts > 0 ? numberOfParts : "FULL") + ", mode=" + discoveryMode + ")");
 	}
 
-	/**
-	 * Core method used by any the "addPotionEffectToBonus" methods.
-	 */
-	public static void addPotionEffectToBonusCore(String bonusId, String effectRL, int level, int duration,
+	public static void addPotionEffectToBonusCore(String bonusName, String effectRL, int level, int duration,
 			int interval) {
 
-		if (isClient()) {
+		if (SetTweaksUtil.instanceIsClient()) {
 			return;
 		}
 
-		ServerBonus serverBonus = findServerBonus(bonusId);
+		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
 		if (serverBonus == null) {
-			CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusId + "' not found. Create/link it first.");
 			return;
 		}
 
-		int amp = Math.max(0, level);
-		int durationTicks = Math.max(0, duration);
-		int intervalTicks = Math.max(0, interval);
-		String effectToken = effectRL + "." + amp + "." + durationTicks + "." + intervalTicks;
+		String parsablePotionBonus = ParseUtil.getParseablePotionBonus(bonusName, effectRL, level, duration, interval);
 
-		String potionSpec = bonusId + ", " + effectToken;
-		BonusElementPotionEffect potionElement = BonusElementPotionEffect.getInstance(potionSpec,
+		BonusElementPotionEffect potionElement = BonusElementPotionEffect.getInstance(parsablePotionBonus,
 				SetBonusData.SERVER_DATA);
+
 		if (potionElement == null) {
-			CraftTweakerAPI.logError(
-					"CTSetBonus: failed to parse potion effect '" + effectToken + "' for bonus '" + bonusId + "'");
+			CraftTweakerAPI.logError("CTSetBonus: failed to parse potion effect for bonus '" + bonusName + "'");
 			return;
 		}
 
-		if (!attachElement(serverBonus, potionElement)) {
-			CraftTweakerAPI.logError("CTSetBonus: could not attach potion element to bonus '" + bonusId + "'");
+		if (!SetTweaksUtil.tryAttachElementToBonus(serverBonus, potionElement)) {
+			CraftTweakerAPI.logError("CTSetBonus: could not attach potion element to bonus '" + bonusName + "'");
 			return;
 		}
 
-		CraftTweakerAPI.logInfo("CTSetBonus: Added potion " + effectRL + " (lvl=" + amp + ", dur=" + durationTicks
-				+ ", interval=" + intervalTicks + ") to bonus '" + bonusId + "'");
+		CraftTweakerAPI.logInfo("CTSetBonus: Added potion " + effectRL + " (lvl=" + level + ", dur=" + duration
+				+ ", interval=" + interval + ") to bonus '" + bonusName + "'");
 	}
 
-	public static void addAttributeModToBonusCore(String bonusId, String attribute, double amount, int operationCode) {
+	public static void addAttributeModToBonusCore(String bonusName, String attribute, double amount,
+			int operationCode) {
 
-		if (isClient()) {
+		if (SetTweaksUtil.instanceIsClient()) {
 			return;
 		}
 
-		ServerBonus serverBonus = findServerBonus(bonusId);
+		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
 		if (serverBonus == null) {
-			CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusId + "' not found. Create/link it first.");
 			return;
 		}
 
-		int operation = (operationCode < 0 || operationCode > 2) ? 0 : operationCode;
-		String spec = attribute + " = " + amount + (operation != 0 ? (" @ " + operation) : "");
-		String attModElementSpec = bonusId + ", " + spec;
+		String parseableModifier = ParseUtil.getParseableModifierBonus(bonusName, attribute, amount, operationCode);
 
-		BonusElementAttributeModifier attModElement = BonusElementAttributeModifier.getInstance(attModElementSpec,
+		BonusElementAttributeModifier attModElement = BonusElementAttributeModifier.getInstance(parseableModifier,
 				SetBonusData.SERVER_DATA);
+
 		if (attModElement == null) {
-			CraftTweakerAPI.logError("CTSetBonus: failed to build attribute element from '" + attModElementSpec + "'");
+			CraftTweakerAPI.logError("CTSetBonus: failed to build attribute element from '" + parseableModifier + "'");
 			return;
 		}
 
-		if (!attachElement(serverBonus, attModElement)) {
-			CraftTweakerAPI.logError("CTSetBonus: could not attach attribute element to bonus '" + bonusId + "'");
+		if (!SetTweaksUtil.tryAttachElementToBonus(serverBonus, attModElement)) {
+			CraftTweakerAPI.logError("CTSetBonus: could not attach attribute element to bonus '" + bonusName + "'");
 			return;
 		}
 
-		CraftTweakerAPI.logInfo("CTSetBonus: Added attribute " + attribute + " = " + amount + " @ " + operation
-				+ " to bonus '" + bonusId + "'");
+		CraftTweakerAPI.logInfo("CTSetBonus: Added attribute " + attribute + " = " + amount + " @ " + operationCode
+				+ " to bonus '" + bonusName + "'");
 	}
 
-	public static void addEnchantmentToBonusCore(String bonusId, String slotSpec, String itemRL, String enchantRL,
+	public static void addEnchantmentToBonusCore(String bonusName, String slotPart, String equipRL, String enchantRL,
 			int level, int mode) {
-		if (isClient())
+
+		if (SetTweaksUtil.instanceIsClient())
 			return;
 
-		ServerBonus serverBonus = findServerBonus(bonusId);
+		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
 		if (serverBonus == null) {
-			CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusId + "' not found. Create/link it first.");
 			return;
 		}
-
-		String raw = slotSpec == null ? "" : slotSpec.trim();
 
 		String slotDataSpec;
-		if (itemRL != null && !itemRL.isEmpty()) {
-			Equip ensured = getOrAddEquipment(itemRL);
-			if (ensured == null) {
-				CraftTweakerAPI.logError("CTSetBonus: unknown item '" + itemRL + "' for enchant target.");
+		if (equipRL != null && !equipRL.isEmpty()) {
+
+			Equip targetEquip = ServerDataUtil.getEquip(equipRL);
+			if (targetEquip == null) {
+				CraftTweakerAPI.logError("CTSetBonus: unknown item '" + equipRL + "' for enchant target.");
 				return;
 			}
-			String equipId = getEquipIdFromRL(itemRL);
-			String lhs = raw.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+			ServerDataUtil.addEquip(equipRL);
+			String equipId = IdFormatter.getEquipIdFromRL(equipRL);
+			String lhs = slotPart.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
 			slotDataSpec = lhs + "=" + equipId;
 		} else {
-			int eqIdx = raw.indexOf('=');
+			int eqIdx = slotPart.indexOf('=');
 			if (eqIdx >= 0) {
 				CraftTweakerAPI.logWarning("CTSetBonus: '=' found in slot but no itemRL provided; "
 						+ "ignoring RHS and targeting the slot only.");
-				raw = raw.substring(0, eqIdx).trim();
+				slotPart = slotPart.substring(0, eqIdx).trim();
 			}
-			slotDataSpec = raw.toLowerCase(Locale.ROOT);
+			slotDataSpec = slotPart.toLowerCase(Locale.ROOT);
 		}
 
 		SlotData slotData = SlotData.getInstance(slotDataSpec, SetBonusData.SERVER_DATA);
@@ -235,14 +217,14 @@ public class SetTweaksCore {
 		}
 
 		String enchantToken = enchantRL + "." + level + "." + mode;
-		String enchantSpec = bonusId + ", " + slotDataSpec + ", " + enchantToken;
+		String parseableEnchantmentBonus = bonusName + ", " + slotDataSpec + ", " + enchantToken;
 
-		BonusElementEnchantment enchantElement = BonusElementEnchantment.getInstance(enchantSpec,
+		BonusElementEnchantment enchantElement = BonusElementEnchantment.getInstance(parseableEnchantmentBonus,
 				SetBonusData.SERVER_DATA);
 		if (enchantElement == null) {
-			CraftTweakerAPI
-					.logWarning("CTSetBonus: enchant parse failed for '" + enchantSpec + "'. Retrying with mode=0.");
-			String retrySpec = bonusId + ", " + slotDataSpec + ", " + enchantRL + "." + level + ".0";
+			CraftTweakerAPI.logWarning(
+					"CTSetBonus: enchant parse failed for '" + parseableEnchantmentBonus + "'. Retrying with mode=0.");
+			String retrySpec = bonusName + ", " + slotDataSpec + ", " + enchantRL + "." + level + ".0";
 			enchantElement = BonusElementEnchantment.getInstance(retrySpec, SetBonusData.SERVER_DATA);
 			if (enchantElement == null) {
 				CraftTweakerAPI.logError("CTSetBonus: enchant parse still failed with fallback. Line: " + retrySpec);
@@ -250,294 +232,13 @@ public class SetTweaksCore {
 			}
 		}
 
-		if (!attachElement(serverBonus, enchantElement)) {
-			CraftTweakerAPI.logError("CTSetBonus: could not attach enchantment element to bonus '" + bonusId + "'");
+		if (!SetTweaksUtil.tryAttachElementToBonus(serverBonus, enchantElement)) {
+			CraftTweakerAPI.logError("CTSetBonus: could not attach enchantment element to bonus '" + bonusName + "'");
 			return;
 		}
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added enchant " + enchantRL + " (lvl=" + level + ", mode=" + mode
-				+ ") to bonus '" + bonusId + "' targeting '" + slotDataSpec + "'");
-	}
-
-	// HELPERS
-
-	/**
-	 * Ensures an Equip entry exists in SERVER_DATA for a given item registry key
-	 * (modid:item). Returns the existing one or creates/parses and registers a new
-	 * one.
-	 */
-	private static Equip getOrAddEquipment(String equipRL) {
-		String equipId = getEquipIdFromRL(equipRL);
-		Equip targetEquip = null;
-		for (Equip equip : SetBonusData.SERVER_DATA.equipment) {
-			if (equipId.equals(equip.id)) {
-				return equip;
-			}
-		}
-		if (targetEquip == null) {
-			String equipSpec = equipId + ", " + equipRL;
-			Equip createdEquip = Equip.getInstance(equipSpec);
-			if (createdEquip != null) {
-				SetBonusData.SERVER_DATA.equipment.add(createdEquip);
-				CraftTweakerAPI.logInfo("CTSetBonus: New equip added : " + equipSpec);
-			}
-			targetEquip = createdEquip;
-		}
-		return targetEquip;
-	}
-
-	/**
-	 * Converts a registry key like modid:item (and optional @meta) into Set Bonus’s
-	 * internal equip id format by replacing :/@ with _. Used to build slot =
-	 * equipId or composite RHS strings.
-	 */
-	private static String getEquipIdFromRL(String equipRL) {
-		return equipRL.replace(":", "_").replace("@", "_");
-	}
-
-	/**
-	 * Replaces commas in user-facing bonus names, avoiding CSV-style parser issues
-	 * when constructing config-like lines.
-	 */
-	private static String sanitizeBonusName(String name) {
-		return name == null ? "" : name.replace(",", " - ");
-	}
-
-	/**
-	 * Checks if a ServerBonus already has a SetRequirement for the same set and
-	 * piece count (full or partial). Prevents duplicate requirements.
-	 */
-	private static boolean hasSameSetRequirement(ServerBonus bonus, String setId, int desiredPieces) {
-		if (bonus == null || setId == null)
-			return false;
-		for (ABonusRequirement bonusReq : bonus.requirements) {
-			if (bonusReq instanceof SetRequirement) {
-				SetRequirement setReq = (SetRequirement) bonusReq;
-				if (setReq.set != null && setId.equals(setReq.set.id)) {
-					int required = (setReq.num == -1) ? setReq.set.getMaxNumber() : setReq.num;
-					if (required == desiredPieces)
-						return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Adds a parsed bonus element (potion/attribute/enchant) to a ServerBonus using
-	 * reflection. Handles both possible field names (elements or bonusElements).
-	 * Returns success/failure.
-	 */
-	@SuppressWarnings("unchecked")
-	private static boolean attachElement(ServerBonus serverBonus, ABonusElement bonusElem) {
-		try {
-			Field field = Bonus.class.getDeclaredField("elements");
-			field.setAccessible(true);
-			((List<ABonusElement>) field.get(serverBonus)).add(bonusElem);
-			return true;
-		} catch (NoSuchFieldException nf) {
-			try {
-				Field field2 = Bonus.class.getDeclaredField("bonusElements");
-				field2.setAccessible(true);
-				((List<ABonusElement>) field2.get(serverBonus)).add(bonusElem);
-				return true;
-			} catch (Throwable t2) {
-				CraftTweakerAPI.logError("CTSetBonus: could not find elements list on ServerBonus", t2);
-				return false;
-			}
-		} catch (Throwable t) {
-			CraftTweakerAPI.logError("CTSetBonus: reflection error while attaching element", t);
-			return false;
-		}
-	}
-
-	/**
-	 * Parses attribute modifier operation from string or number. Accepts add |
-	 * mult_base | mult_total (or 0|1|2). Defaults to add with an error log on
-	 * unknown inputs.
-	 */
-	public static int parseOperation(String operation) {
-		if (operation == null)
-			return 0;
-		switch (operation.trim().toLowerCase(Locale.ROOT)) {
-		case "add":
-			return 0; // + amount
-		case "mult_base":
-			return 1; // + base * amount
-		case "mult_total":
-			return 2; // * (1 + amount)
-		default:
-			try {
-				int operationInt = Integer.parseInt(operation);
-				if (operationInt >= 0 && operationInt <= 2)
-					return operationInt;
-			} catch (NumberFormatException ignored) {
-			}
-			CraftTweakerAPI.logError("CTSetBonus: unknown attribute operation '" + operation
-					+ "'. Use add | mult_base | mult_total (defaulting to add).");
-			return 0;
-		}
-	}
-
-	/**
-	 * Finds a ServerBonus by id in SERVER_DATA.bonuses (only returns if the bonus
-	 * is actually a ServerBonus).
-	 */
-	private static ServerBonus findServerBonus(String bonusID) {
-		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
-			if (bonusID.equals(bonus.id) && bonus instanceof ServerBonus)
-				return (ServerBonus) bonus;
-		}
-		return null;
-	}
-
-	/**
-	 * Normalizes slot identifiers to canonical forms: trims, lowercases, strips
-	 * spaces; maps armor indices 39/38/37/36 to head/chest/legs/feet; leaves other
-	 * numbers or names (mainhand, offhand) as-is
-	 */
-	private static String normalizeSlotKey(String slotPart) {
-		if (slotPart == null)
-			return "";
-		String slotPartTrim = slotPart.trim().toLowerCase(Locale.ROOT).replace(" ", "");
-
-		try {
-			int slotPartInt = Integer.parseInt(slotPartTrim);
-			switch (slotPartInt) {
-			case 36:
-				return "feet";
-			case 37:
-				return "legs";
-			case 38:
-				return "chest";
-			case 39:
-				return "head";
-			default:
-				return slotPartTrim;
-			}
-		} catch (NumberFormatException ignore) {
-		}
-
-		return slotPartTrim;
-	}
-
-	/**
-	 * Clears the internal per-(set,slot) accumulator map used to OR-merge multiple
-	 * items into a single SlotData
-	 */
-	static void clearSlotAccumulators() {
-		SLOT_ACCUMULATORS.clear();
-	}
-
-	/**
-	 * Validates the item registry key, makes sure an Equip entry exists for it
-	 * (creating one if needed), and returns the internal equipId. If anything’s
-	 * off, it logs an error.
-	 */
-	private static String requireEquipIdOrLog(String equipRL, String setName) {
-		if (equipRL == null || equipRL.trim().isEmpty()) {
-			CraftTweakerAPI.logError("CTSetBonus: empty item registry key for set '" + setName + "'.");
-			return null;
-		}
-		String equipRLTrim = equipRL.trim();
-		Equip equipment = getOrAddEquipment(equipRLTrim);
-		if (equipment == null) {
-			CraftTweakerAPI.logError("CTSetBonus: bad equip registry key '" + equipRLTrim + "'");
-			return null;
-		}
-		return getEquipIdFromRL(equipRLTrim);
-	}
-
-	/**
-	 * Looks up (or creates) the “SlotAccum” object that tracks everything added to
-	 * a specific (set, slot) pair. It also grabs the current Set reference if the
-	 * set is already in SERVER_DATA.
-	 */
-	private static SlotAccum getOrCreateAccum(String setName, String slotPart) {
-		String setId = setName.replace(" ", "");
-		String slotKey = normalizeSlotKey(slotPart);
-
-		String key = setId + "|" + slotKey;
-		SlotAccum slotAccumulator = SLOT_ACCUMULATORS.get(key);
-		if (slotAccumulator == null) {
-			slotAccumulator = new SlotAccum(setId, setName, slotKey);
-			slotAccumulator.setRef = findSetById(setId);
-			SLOT_ACCUMULATORS.put(key, slotAccumulator);
-		} else {
-			slotAccumulator.setName = setName;
-		}
-		return slotAccumulator;
-	}
-
-	/**
-	 * Builds the exact string the Set Bonus parser expects, like slotKey = id1 |
-	 * id2 | id3, using the current list of allowed items for that slot.
-	 */
-	private static String buildSlotToken(String slotKey, LinkedHashSet<String> equipIds) {
-		return slotKey + " = " + String.join(" | ", equipIds);
-	}
-
-	/**
-	 * Applies the slot token to the data model. If the set doesn’t exist yet, it
-	 * creates the set with this slot pre-populated; if it does exist, it replaces
-	 * the previous SlotData for that slot with the new merged one.
-	 */
-	private static boolean applySlotOptions(SlotAccum slotAcc, String slotToken) {
-		if (slotAcc.setRef == null) {
-
-			String setSpec = slotAcc.setId + ", " + slotAcc.setName + ", " + slotToken;
-			Set createdSet = Set.getInstance(setSpec, SetBonusData.SERVER_DATA);
-			if (createdSet == null) {
-				CraftTweakerAPI
-						.logError("CTSetBonus: failed to create set '" + slotAcc.setId + "' from '" + setSpec + "'");
-				return false;
-			}
-			SetBonusData.SERVER_DATA.sets.add(createdSet);
-			slotAcc.setRef = createdSet;
-
-			if (createdSet.slotData.isEmpty()) {
-				CraftTweakerAPI
-						.logError("CTSetBonus: internal error: created set has no slot data for '" + slotToken + "'");
-				return false;
-			}
-			slotAcc.slotRef = createdSet.slotData.get(createdSet.slotData.size() - 1);
-
-			CraftTweakerAPI.logInfo("CTSetBonus: New set added " + slotAcc.setName + " (" + slotAcc.setId + ")");
-			return true;
-		}
-
-		if (slotAcc.slotRef != null) {
-			slotAcc.setRef.slotData.remove(slotAcc.slotRef);
-			slotAcc.slotRef = null;
-		}
-
-		SlotData slotData = SlotData.getInstance(slotToken, SetBonusData.SERVER_DATA);
-		if (slotData == null) {
-			CraftTweakerAPI.logError("CTSetBonus: bad slot token '" + slotToken + "'");
-			return false;
-		}
-		slotAcc.setRef.slotData.add(slotData);
-		slotAcc.slotRef = slotData;
-		return true;
-	}
-
-	/**
-	 * Returns true when running on the logical client (Side.CLIENT). Used to avoid
-	 * mutating server-only data structures on the client.
-	 */
-	public static boolean isClient() {
-		return FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT;
-	}
-
-	/**
-	 * Linear search for a Set in SERVER_DATA.sets by id.
-	 */
-	public static Set findSetById(String setId) {
-		for (Set set : SetBonusData.SERVER_DATA.sets) {
-			if (setId.equals(set.id))
-				return set;
-		}
-		return null;
+				+ ") to bonus '" + bonusName + "' targeting '" + slotDataSpec + "'");
 	}
 
 }
