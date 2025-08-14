@@ -44,21 +44,25 @@ public class ServerDataUtil {
 	public static void addEquip(String equipRL) {
 		String parseableEquip = ParseUtil.getParseableEquip(equipRL);
 		Equip createdEquip = Equip.getInstance(parseableEquip);
+
 		if (createdEquip != null) {
 			SetBonusData.SERVER_DATA.equipment.add(createdEquip);
 			CraftTweakerAPI.logInfo("CTSetBonus: New equip added : " + parseableEquip);
 		}
+
 	}
 
 	public static void addSet(SlotAccum slotAcc) {
 		String slotToken = slotAcc.buildSlotToken();
 		String parseableSet = ParseUtil.getParseableSet(slotAcc.setName, slotToken);
 		Set createdSet = Set.getInstance(parseableSet, SetBonusData.SERVER_DATA);
+
 		if (createdSet == null) {
 			CraftTweakerAPI
 					.logError("CTSetBonus: failed to create set '" + slotAcc.setId + "' from '" + parseableSet + "'");
 			return;
 		}
+
 		SetBonusData.SERVER_DATA.sets.add(createdSet);
 		slotAcc.set = createdSet;
 
@@ -78,6 +82,7 @@ public class ServerDataUtil {
 		String parseableBonus = ParseUtil.getParseableBonus(bonusName, bonusDescription, setName, numberOfParts,
 				discoveryMode);
 		Bonus createdBonus = Bonus.getInstance(parseableBonus, SetBonusData.SERVER_DATA);
+
 		if (createdBonus == null) {
 			CraftTweakerAPI
 					.logError("CTSetBonus: failed to create bonus '" + bonusName + "' from '" + parseableBonus + "'");
@@ -87,14 +92,13 @@ public class ServerDataUtil {
 		CraftTweakerAPI.logInfo("CTSetBonus: New bonus added : " + bonusName);
 	}
 
-	/**
-	 * Checks if a ServerBonus already has a SetRequirement for the same set and
-	 * piece count (full or partial). Prevents duplicate requirements.
-	 */
 	public static boolean hasSameSetRequirement(ServerBonus bonus, String setName, int desiredPieces) {
 		String setId = IdFormatter.getSetIdFromName(setName);
-		if (bonus == null || setId == null)
+
+		if (bonus == null || setId == null) {
 			return false;
+		}
+
 		for (ABonusRequirement bonusReq : bonus.requirements) {
 			if (bonusReq instanceof SetRequirement) {
 				SetRequirement setReq = (SetRequirement) bonusReq;
@@ -105,6 +109,7 @@ public class ServerDataUtil {
 				}
 			}
 		}
+
 		return false;
 	}
 

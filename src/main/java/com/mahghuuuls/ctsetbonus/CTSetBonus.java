@@ -3,11 +3,8 @@ package com.mahghuuuls.ctsetbonus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.mahghuuuls.ctsetbonus.slotaccumulator.SlotAccumulators;
-
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
 
 @Mod(modid = CTSetBonus.MOD_ID, name = CTSetBonus.NAME, version = CTSetBonus.VERSION)
 public class CTSetBonus {
@@ -17,13 +14,8 @@ public class CTSetBonus {
 	public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
 	@Mod.EventHandler
-	public void onServerAboutToStart(FMLServerStartingEvent event) {
+	public void onServerStarted(FMLServerStartingEvent event) {
 		ScriptLoader.applyQueuedTweaks();
-	}
-
-	@Mod.EventHandler
-	public void onServerStopping(FMLServerStoppingEvent event) {
-		SlotAccumulators.clear();
 	}
 
 }

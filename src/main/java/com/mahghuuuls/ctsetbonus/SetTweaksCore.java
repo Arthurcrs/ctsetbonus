@@ -46,10 +46,12 @@ public class SetTweaksCore {
 		}
 
 		SlotData slotData = SlotData.getInstance(slotToken, SetBonusData.SERVER_DATA);
+
 		if (slotData == null) {
 			CraftTweakerAPI.logError("CTSetBonus: bad slot token '" + slotToken + "'");
 			return;
 		}
+
 		slotAccumulator.set.slotData.add(slotData);
 		slotAccumulator.slotData = slotData;
 
@@ -70,11 +72,13 @@ public class SetTweaksCore {
 		}
 
 		Set set = ServerDataUtil.getSet(setName);
+
 		if (set == null) {
 			return;
 		}
 
 		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
+
 		if (serverBonus == null) {
 			ServerDataUtil.addBonus(bonusName, bonusDescription, setName, numberOfParts, discoveryMode);
 			CraftTweakerAPI.logInfo("CTSetBonus: Linked bonus '" + bonusName + "' -> set '" + setName + "' (pieces="
