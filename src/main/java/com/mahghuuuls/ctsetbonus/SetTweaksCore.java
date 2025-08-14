@@ -83,18 +83,21 @@ public class SetTweaksCore {
 		}
 
 		String parseableRequirement = ParseUtil.getParseableRequirement(setName, numberOfParts);
-
 		ABonusRequirement bonusReq = ABonusRequirement.parse(parseableRequirement, SetBonusData.SERVER_DATA.sets);
+
 		if (bonusReq == null) {
 			CraftTweakerAPI.logError("CTSetBonus: bad requirement '" + parseableRequirement + "'");
 			return;
 		}
+
 		int desiredPieces = (numberOfParts > 0) ? numberOfParts : set.getMaxNumber();
+
 		if (ServerDataUtil.hasSameSetRequirement(serverBonus, setName, desiredPieces)) {
 			CraftTweakerAPI.logInfo(
 					"CTSetBonus: bonus '" + bonusName + "' already has requirement '" + parseableRequirement + "'");
 			return;
 		}
+
 		serverBonus.requirements.add(bonusReq);
 		CraftTweakerAPI.logInfo("CTSetBonus: Linked bonus '" + bonusName + "' -> set '" + setName + "' (pieces="
 				+ (numberOfParts > 0 ? numberOfParts : "FULL") + ", mode=" + discoveryMode + ")");
@@ -113,7 +116,6 @@ public class SetTweaksCore {
 		}
 
 		String parsablePotionBonus = ParseUtil.getParseablePotionBonus(bonusName, effectRL, level, duration, interval);
-
 		BonusElementPotionEffect potionElement = BonusElementPotionEffect.getInstance(parsablePotionBonus,
 				SetBonusData.SERVER_DATA);
 
@@ -122,10 +124,7 @@ public class SetTweaksCore {
 			return;
 		}
 
-		if (!SetTweaksUtil.tryAttachElementToBonus(serverBonus, potionElement)) {
-			CraftTweakerAPI.logError("CTSetBonus: could not attach potion element to bonus '" + bonusName + "'");
-			return;
-		}
+		SetTweaksUtil.attachElementToBonus(serverBonus, potionElement);
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added potion " + effectRL + " (lvl=" + level + ", dur=" + duration
 				+ ", interval=" + interval + ") to bonus '" + bonusName + "'");
@@ -144,9 +143,9 @@ public class SetTweaksCore {
 		}
 
 		String parseableModifier = ParseUtil.getParseableModifierBonus(bonusName, attribute, amount, operationCode);
-
 		BonusElementAttributeModifier attModElement = BonusElementAttributeModifier.getInstance(parseableModifier,
 				SetBonusData.SERVER_DATA);
+
 		if (attModElement == null) {
 			CraftTweakerAPI.logError("CTSetBonus: failed to build attribute element from '" + parseableModifier + "'");
 			return;
@@ -178,6 +177,7 @@ public class SetTweaksCore {
 		String parseableSlotData = ParseUtil.getParseableSlotData(equipRL, slot);
 
 		SlotData slotData = SlotData.getInstance(parseableSlotData, SetBonusData.SERVER_DATA);
+
 		if (slotData == null) {
 			CraftTweakerAPI.logError("CTSetBonus: invalid slot selector '" + parseableSlotData + "'. "
 					+ "Use 'head', 'chest', 'legs', 'feet', 'mainhand', 'offhand', a number, or 'slot=modid:item'.");
@@ -186,7 +186,6 @@ public class SetTweaksCore {
 
 		String parseableEnchantmentBonus = ParseUtil.getParseableEnchantmentBonus(bonusName, slot, equipRL, enchantRL,
 				level, mode);
-
 		BonusElementEnchantment enchantElement = BonusElementEnchantment.getInstance(parseableEnchantmentBonus,
 				SetBonusData.SERVER_DATA);
 
@@ -195,10 +194,7 @@ public class SetTweaksCore {
 					"CTSetBonus: failed to build enchantment element from '" + parseableEnchantmentBonus + "'");
 		}
 
-		if (!SetTweaksUtil.tryAttachElementToBonus(serverBonus, enchantElement)) {
-			CraftTweakerAPI.logError("CTSetBonus: could not attach enchantment element to bonus '" + bonusName + "'");
-			return;
-		}
+		SetTweaksUtil.attachElementToBonus(serverBonus, enchantElement);
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added enchant " + enchantRL + " (lvl=" + level + ", mode=" + mode
 				+ ") to bonus '" + bonusName);
