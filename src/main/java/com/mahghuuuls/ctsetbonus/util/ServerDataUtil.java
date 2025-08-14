@@ -29,8 +29,6 @@ public class ServerDataUtil {
 			if (setId.equals(set.id))
 				return set;
 		}
-		CraftTweakerAPI.logError("CTSetBonus: set '" + setName + "' not found. "
-				+ "Add at least one equip to the set before adding bonuses.");
 		return null;
 	}
 

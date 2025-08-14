@@ -14,19 +14,10 @@ import net.minecraftforge.fml.relauncher.Side;
 
 public class SetTweaksUtil {
 
-	/**
-	 * Replaces commas in user-facing bonus names, avoiding CSV-style parser issues
-	 * when constructing config-like lines.
-	 */
 	public static String cleanBonusDescription(String bonusDescription) {
 		return bonusDescription == null ? "" : bonusDescription.replace(",", " - ");
 	}
 
-	/**
-	 * Adds a parsed bonus element (potion/attribute/enchant) to a ServerBonus using
-	 * reflection. Handles both possible field names (elements or bonusElements).
-	 * Returns success/failure.
-	 */
 	@SuppressWarnings("unchecked")
 	public static boolean tryAttachElementToBonus(ServerBonus serverBonus, ABonusElement bonusElem) {
 		try {
@@ -78,10 +69,6 @@ public class SetTweaksUtil {
 		}
 	}
 
-	/**
-	 * Returns true when running on the logical client (Side.CLIENT). Used to avoid
-	 * mutating server-only data structures on the client.
-	 */
 	public static boolean instanceIsClient() {
 		return FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT;
 	}
