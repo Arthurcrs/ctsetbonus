@@ -38,7 +38,6 @@ public class ServerDataUtil {
 			if (bonusId.equals(bonus.id) && bonus instanceof ServerBonus)
 				return (ServerBonus) bonus;
 		}
-		CraftTweakerAPI.logError("CTSetBonus: bonus '" + bonusName + "' not found. Create/link it first.");
 		return null;
 	}
 
@@ -68,13 +67,24 @@ public class ServerDataUtil {
 					.logError("CTSetBonus: internal error: created set has no slot data for '" + slotToken + "'");
 			return;
 		}
-		slotAcc.slotData = createdSet.slotData.get(createdSet.slotData.size() - 1);
 
+		slotAcc.slotData = createdSet.slotData.get(createdSet.slotData.size() - 1);
 		CraftTweakerAPI.logInfo("CTSetBonus: New set added " + slotAcc.setName + " (" + slotAcc.setId + ")");
 	}
 
-	public static void addBonus(String bonusName) {
-		// TODO
+	public static void addBonus(String bonusName, String bonusDescription, String setName, int numberOfParts,
+			int discoveryMode) {
+		bonusDescription = SetTweaksUtil.cleanBonusDescription(bonusDescription);
+		String parseableBonus = ParseUtil.getParseableBonus(bonusName, bonusDescription, setName, numberOfParts,
+				discoveryMode);
+		Bonus createdBonus = Bonus.getInstance(parseableBonus, SetBonusData.SERVER_DATA);
+		if (createdBonus == null) {
+			CraftTweakerAPI
+					.logError("CTSetBonus: failed to create bonus '" + bonusName + "' from '" + parseableBonus + "'");
+		}
+
+		SetBonusData.SERVER_DATA.bonuses.add(createdBonus);
+		CraftTweakerAPI.logInfo("CTSetBonus: New bonus added : " + bonusName);
 	}
 
 	/**

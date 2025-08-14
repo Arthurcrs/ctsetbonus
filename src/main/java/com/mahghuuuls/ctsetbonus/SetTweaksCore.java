@@ -1,7 +1,6 @@
 package com.mahghuuuls.ctsetbonus;
 
 import com.fantasticsource.setbonus.SetBonusData;
-import com.fantasticsource.setbonus.common.Bonus;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementAttributeModifier;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementEnchantment;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementPotionEffect;
@@ -66,41 +65,31 @@ public class SetTweaksCore {
 		}
 
 		if (discoveryMode < 0 || discoveryMode > 2) {
-			CraftTweakerAPI
-					.logWarning("CTSetBonus: discovery mode " + discoveryMode + " is outside 0..2; attempting as-is.");
+			CraftTweakerAPI.logError("CTSetBonus: Invalid discovery mode '" + discoveryMode + "'");
+			return;
 		}
 
-		Set setRef = ServerDataUtil.getSet(setName);
-		if (setRef == null) {
+		Set set = ServerDataUtil.getSet(setName);
+		if (set == null) {
+			return;
+		}
+
+		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
+		if (serverBonus == null) {
+			ServerDataUtil.addBonus(bonusName, bonusDescription, setName, numberOfParts, discoveryMode);
+			CraftTweakerAPI.logInfo("CTSetBonus: Linked bonus '" + bonusName + "' -> set '" + setName + "' (pieces="
+					+ (numberOfParts > 0 ? numberOfParts : "FULL") + ", mode=" + discoveryMode + ")");
 			return;
 		}
 
 		String parseableRequirement = ParseUtil.getParseableRequirement(setName, numberOfParts);
-
-		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
-
-		if (serverBonus == null) {
-			String safeDescription = SetTweaksUtil.cleanBonusDescription(bonusDescription); // commas break parsing
-			String parseableBonus = ParseUtil.getParseableBonus(bonusName, bonusDescription, setName, numberOfParts,
-					discoveryMode);
-			Bonus createdBonus = Bonus.getInstance(parseableBonus, SetBonusData.SERVER_DATA);
-			if (!(createdBonus instanceof ServerBonus)) {
-				CraftTweakerAPI.logError(
-						"CTSetBonus: failed to create bonus '" + bonusName + "' from '" + parseableBonus + "'");
-				return;
-			}
-			SetBonusData.SERVER_DATA.bonuses.add(createdBonus);
-			CraftTweakerAPI.logInfo("CTSetBonus: New bonus added " + bonusName + " (\"" + safeDescription + "\", mode="
-					+ discoveryMode + ", req=" + parseableRequirement + ")");
-			return;
-		}
 
 		ABonusRequirement bonusReq = ABonusRequirement.parse(parseableRequirement, SetBonusData.SERVER_DATA.sets);
 		if (bonusReq == null) {
 			CraftTweakerAPI.logError("CTSetBonus: bad requirement '" + parseableRequirement + "'");
 			return;
 		}
-		int desiredPieces = (numberOfParts > 0) ? numberOfParts : setRef.getMaxNumber();
+		int desiredPieces = (numberOfParts > 0) ? numberOfParts : set.getMaxNumber();
 		if (ServerDataUtil.hasSameSetRequirement(serverBonus, setName, desiredPieces)) {
 			CraftTweakerAPI.logInfo(
 					"CTSetBonus: bonus '" + bonusName + "' already has requirement '" + parseableRequirement + "'");
