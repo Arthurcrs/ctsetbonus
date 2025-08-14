@@ -9,10 +9,7 @@ import com.mahghuuuls.ctsetbonus.util.IdFormatter;
 /**
  * Collect multiple item candidates for a single set slot and merge them into
  * one SlotData entry using OR syntax: eg. "mainhand = idA | idB | idC".
- * Preserves insertion order and de-duplicates items.v
- * 
- * Each set has its own slot key?
- * 
+ * Preserves insertion order and de-duplicates items.
  */
 public final class SlotAccum {
 	public String setId;

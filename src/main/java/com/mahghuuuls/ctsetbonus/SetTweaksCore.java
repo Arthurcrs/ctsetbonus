@@ -1,7 +1,5 @@
 package com.mahghuuuls.ctsetbonus;
 
-import java.util.Locale;
-
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
 import com.fantasticsource.setbonus.common.bonuselements.BonusElementAttributeModifier;
@@ -14,7 +12,6 @@ import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Slot
 import com.fantasticsource.setbonus.server.ServerBonus;
 import com.mahghuuuls.ctsetbonus.slotaccumulator.SlotAccum;
 import com.mahghuuuls.ctsetbonus.slotaccumulator.SlotAccumulators;
-import com.mahghuuuls.ctsetbonus.util.IdFormatter;
 import com.mahghuuuls.ctsetbonus.util.ParseUtil;
 import com.mahghuuuls.ctsetbonus.util.ServerDataUtil;
 import com.mahghuuuls.ctsetbonus.util.SetTweaksUtil;
@@ -176,7 +173,7 @@ public class SetTweaksCore {
 				+ " to bonus '" + bonusName + "'");
 	}
 
-	public static void addEnchantmentToBonusCore(String bonusName, String slotPart, String equipRL, String enchantRL,
+	public static void addEnchantmentToBonusCore(String bonusName, String slot, String equipRL, String enchantRL,
 			int level, int mode) {
 
 		if (SetTweaksUtil.instanceIsClient())
@@ -187,49 +184,30 @@ public class SetTweaksCore {
 			return;
 		}
 
-		String slotDataSpec;
-		if (equipRL != null && !equipRL.isEmpty()) {
-
-			Equip targetEquip = ServerDataUtil.getEquip(equipRL);
-			if (targetEquip == null) {
-				CraftTweakerAPI.logError("CTSetBonus: unknown item '" + equipRL + "' for enchant target.");
-				return;
-			}
-			ServerDataUtil.addEquip(equipRL);
-			String equipId = IdFormatter.getEquipIdFromRL(equipRL);
-			String lhs = slotPart.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
-			slotDataSpec = lhs + "=" + equipId;
-		} else {
-			int eqIdx = slotPart.indexOf('=');
-			if (eqIdx >= 0) {
-				CraftTweakerAPI.logWarning("CTSetBonus: '=' found in slot but no itemRL provided; "
-						+ "ignoring RHS and targeting the slot only.");
-				slotPart = slotPart.substring(0, eqIdx).trim();
-			}
-			slotDataSpec = slotPart.toLowerCase(Locale.ROOT);
+		Equip targetEquip = ServerDataUtil.getEquip(equipRL);
+		if (targetEquip == null) {
+			CraftTweakerAPI.logError("CTSetBonus: unknown item '" + equipRL);
+			return;
 		}
 
-		SlotData slotData = SlotData.getInstance(slotDataSpec, SetBonusData.SERVER_DATA);
+		String parseableSlotData = ParseUtil.getParseableSlotData(equipRL, slot);
+
+		SlotData slotData = SlotData.getInstance(parseableSlotData, SetBonusData.SERVER_DATA);
 		if (slotData == null) {
-			CraftTweakerAPI.logError("CTSetBonus: invalid slot selector '" + slotDataSpec + "'. "
+			CraftTweakerAPI.logError("CTSetBonus: invalid slot selector '" + parseableSlotData + "'. "
 					+ "Use 'head', 'chest', 'legs', 'feet', 'mainhand', 'offhand', a number, or 'slot=modid:item'.");
 			return;
 		}
 
-		String enchantToken = enchantRL + "." + level + "." + mode;
-		String parseableEnchantmentBonus = bonusName + ", " + slotDataSpec + ", " + enchantToken;
+		String parseableEnchantmentBonus = ParseUtil.getParseableEnchantmentBonus(bonusName, slot, equipRL, enchantRL,
+				level, mode);
 
 		BonusElementEnchantment enchantElement = BonusElementEnchantment.getInstance(parseableEnchantmentBonus,
 				SetBonusData.SERVER_DATA);
+
 		if (enchantElement == null) {
-			CraftTweakerAPI.logWarning(
-					"CTSetBonus: enchant parse failed for '" + parseableEnchantmentBonus + "'. Retrying with mode=0.");
-			String retrySpec = bonusName + ", " + slotDataSpec + ", " + enchantRL + "." + level + ".0";
-			enchantElement = BonusElementEnchantment.getInstance(retrySpec, SetBonusData.SERVER_DATA);
-			if (enchantElement == null) {
-				CraftTweakerAPI.logError("CTSetBonus: enchant parse still failed with fallback. Line: " + retrySpec);
-				return;
-			}
+			CraftTweakerAPI.logError(
+					"CTSetBonus: failed to build enchantment element from '" + parseableEnchantmentBonus + "'");
 		}
 
 		if (!SetTweaksUtil.tryAttachElementToBonus(serverBonus, enchantElement)) {
@@ -238,7 +216,7 @@ public class SetTweaksCore {
 		}
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added enchant " + enchantRL + " (lvl=" + level + ", mode=" + mode
-				+ ") to bonus '" + bonusName + "' targeting '" + slotDataSpec + "'");
+				+ ") to bonus '" + bonusName);
 	}
 
 }

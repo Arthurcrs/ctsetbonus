@@ -19,6 +19,12 @@ public class ParseUtil {
 		return bonusId + ", " + safeDescription + ", " + discoveryMode + ", " + requirementSpec;
 	}
 
+	public static String getParseableSlotData(String equipRL, String slot) {
+		ServerDataUtil.addEquip(equipRL);
+		String equipId = IdFormatter.getEquipIdFromRL(equipRL);
+		return slot + "=" + equipId;
+	}
+
 	public static String getParseableRequirement(String setName, int numberOfParts) {
 		String setId = IdFormatter.getSetIdFromName(setName);
 		return (numberOfParts > 0) ? (setId + "." + numberOfParts) : setId;
@@ -31,11 +37,6 @@ public class ParseUtil {
 		return bonusId + ", " + effectToken;
 	}
 
-//	public static String getParseableSlotData(String slot, String[] equipsRL) {
-//
-//		return ""; // TODO
-//	}
-
 	public static String getParseableModifierBonus(String bonusName, String attribute, double amount,
 			int operationCode) {
 		String bonusId = IdFormatter.getBonusIdFromName(bonusName);
@@ -43,9 +44,9 @@ public class ParseUtil {
 		return bonusId + ", " + spec;
 	}
 
-//	public static String getParseableEnchantmentBonus(String bonusName, String enchantRL, int level, int mode) {
-//	String enchantToken = enchantRL + "." + level + "." + mode;
-//	return bonusName + ", " + slotDataSpec + ", " + enchantToken;
-//}	
+	public static String getParseableEnchantmentBonus(String bonusName, String slot, String equipRL, String enchantRL,
+			int level, int mode) {
+		return bonusName + ", " + getParseableSlotData(equipRL, slot) + ", " + enchantRL + "." + level + "." + mode;
+	}
 
 }

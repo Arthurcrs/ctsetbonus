@@ -68,9 +68,10 @@ public class SetTweaks {
 	}
 
 	@ZenMethod
-	public static void addPotionEffectToBonus(String bonusName, String effectRL, int level, int duration, int interval) {
-		ScriptLoader
-				.enqueue(() -> SetTweaksCore.addPotionEffectToBonusCore(bonusName, effectRL, level, duration, interval));
+	public static void addPotionEffectToBonus(String bonusName, String effectRL, int level, int duration,
+			int interval) {
+		ScriptLoader.enqueue(
+				() -> SetTweaksCore.addPotionEffectToBonusCore(bonusName, effectRL, level, duration, interval));
 	}
 
 	// ADD ATTRIBUTE MOD ELEMENT TO BONUS
@@ -78,20 +79,15 @@ public class SetTweaks {
 	@ZenMethod
 	public static void addAttributeModToBonus(String bonusName, String attribute, double amount, String operation) {
 		int operationCode = SetTweaksUtil.parseOperation(operation);
-		ScriptLoader.enqueue(() -> SetTweaksCore.addAttributeModToBonusCore(bonusName, attribute, amount, operationCode));
+		ScriptLoader
+				.enqueue(() -> SetTweaksCore.addAttributeModToBonusCore(bonusName, attribute, amount, operationCode));
 	}
 
 	// ADD ENCHANTMENT ELEMENT TO BONUS
 
 	@ZenMethod
-	public static void addEnchantmentToBonus(String bonusName, String slot, String enchantRL, int level) {
-		ScriptLoader
-				.enqueue(() -> SetTweaksCore.addEnchantmentToBonusCore(bonusName, slot, "", enchantRL, level, 0));
-	}
-
-	@ZenMethod
-	public static void addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL,
-			int level, int mode) {
+	public static void addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL, int level,
+			int mode) {
 		ScriptLoader.enqueue(
 				() -> SetTweaksCore.addEnchantmentToBonusCore(bonusName, slot, equipRL, enchantRL, level, mode));
 	}
