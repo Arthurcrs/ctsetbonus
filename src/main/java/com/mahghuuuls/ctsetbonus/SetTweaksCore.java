@@ -147,16 +147,12 @@ public class SetTweaksCore {
 
 		BonusElementAttributeModifier attModElement = BonusElementAttributeModifier.getInstance(parseableModifier,
 				SetBonusData.SERVER_DATA);
-
 		if (attModElement == null) {
 			CraftTweakerAPI.logError("CTSetBonus: failed to build attribute element from '" + parseableModifier + "'");
 			return;
 		}
 
-		if (!SetTweaksUtil.tryAttachElementToBonus(serverBonus, attModElement)) {
-			CraftTweakerAPI.logError("CTSetBonus: could not attach attribute element to bonus '" + bonusName + "'");
-			return;
-		}
+		SetTweaksUtil.attachElementToBonus(serverBonus, attModElement);
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added attribute " + attribute + " = " + amount + " @ " + operationCode
 				+ " to bonus '" + bonusName + "'");

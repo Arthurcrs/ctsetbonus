@@ -1,10 +1,7 @@
 package com.mahghuuuls.ctsetbonus.util;
 
-import java.lang.reflect.Field;
-import java.util.List;
 import java.util.Locale;
 
-import com.fantasticsource.setbonus.common.Bonus;
 import com.fantasticsource.setbonus.common.bonuselements.ABonusElement;
 import com.fantasticsource.setbonus.server.ServerBonus;
 
@@ -18,27 +15,9 @@ public class SetTweaksUtil {
 		return bonusDescription == null ? "" : bonusDescription.replace(",", " - ");
 	}
 
-	@SuppressWarnings("unchecked")
-	public static boolean tryAttachElementToBonus(ServerBonus serverBonus, ABonusElement bonusElem) {
-		try {
-			Field field = Bonus.class.getDeclaredField("elements");
-			field.setAccessible(true);
-			((List<ABonusElement>) field.get(serverBonus)).add(bonusElem);
-			return true;
-		} catch (NoSuchFieldException nf) {
-			try {
-				Field field2 = Bonus.class.getDeclaredField("bonusElements");
-				field2.setAccessible(true);
-				((List<ABonusElement>) field2.get(serverBonus)).add(bonusElem);
-				return true;
-			} catch (Throwable t2) {
-				CraftTweakerAPI.logError("CTSetBonus: could not find elements list on ServerBonus", t2);
-				return false;
-			}
-		} catch (Throwable t) {
-			CraftTweakerAPI.logError("CTSetBonus: reflection error while attaching element", t);
-			return false;
-		}
+	public static boolean attachElementToBonus(ServerBonus serverBonus, ABonusElement bonusElem) {
+		serverBonus.bonusElements.add(bonusElem);
+		return true;
 	}
 
 	/**
