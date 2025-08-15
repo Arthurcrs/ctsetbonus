@@ -1,5 +1,9 @@
 package com.mahghuuuls.ctsetbonus.util;
 
+import java.util.Locale;
+
+import crafttweaker.CraftTweakerAPI;
+
 public class ParseUtil {
 
 	public static String getParseableSet(String setName, String slotToken) {
@@ -14,8 +18,8 @@ public class ParseUtil {
 	public static String getParseableBonus(String bonusName, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
 		String bonusId = IdFormatter.getBonusIdFromName(bonusName);
+		String safeDescription = cleanBonusDescription(bonusDescription);
 		String requirementSpec = getParseableRequirement(setName, numberOfParts);
-		String safeDescription = SetTweaksUtil.cleanBonusDescription(bonusDescription);
 		return bonusId + ", " + safeDescription + ", " + discoveryMode + ", " + requirementSpec;
 	}
 
@@ -46,7 +50,44 @@ public class ParseUtil {
 
 	public static String getParseableEnchantmentBonus(String bonusName, String slot, String equipRL, String enchantRL,
 			int level, int mode) {
-		return bonusName + ", " + getParseableSlotData(equipRL, slot) + ", " + enchantRL + "." + level + "." + mode;
+		String bonusId = IdFormatter.getBonusIdFromName(bonusName);
+		return bonusId + ", " + getParseableSlotData(equipRL, slot) + ", " + enchantRL + "." + level + "." + mode;
+	}
+
+	/**
+	 * Parses attribute modifier operation from string or number. Accepts add |
+	 * mult_base | mult_total (or 0|1|2). Defaults to add with an error log on
+	 * unknown inputs.
+	 */
+	public static int parseOperation(String operation) {
+
+		if (operation == null) {
+			return 0;
+		}
+
+		switch (operation.trim().toLowerCase(Locale.ROOT)) {
+		case "add":
+			return 0; // + amount
+		case "mult_base":
+			return 1; // + base * amount
+		case "mult_total":
+			return 2; // * (1 + amount)
+		default:
+			try {
+				int operationInt = Integer.parseInt(operation);
+				if (operationInt >= 0 && operationInt <= 2)
+					return operationInt;
+			} catch (NumberFormatException ignored) {
+			}
+			CraftTweakerAPI.logError("CTSetBonus: unknown attribute operation '" + operation
+					+ "'. Use add | mult_base | mult_total (defaulting to add).");
+			return 0;
+		}
+
+	}
+
+	public static String cleanBonusDescription(String bonusDescription) {
+		return bonusDescription == null ? "" : bonusDescription.replace(",", " - ");
 	}
 
 }

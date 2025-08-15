@@ -2,7 +2,7 @@ package com.mahghuuuls.ctsetbonus.zen;
 
 import com.mahghuuuls.ctsetbonus.ScriptLoader;
 import com.mahghuuuls.ctsetbonus.SetTweaksCore;
-import com.mahghuuuls.ctsetbonus.util.SetTweaksUtil;
+import com.mahghuuuls.ctsetbonus.util.ParseUtil;
 
 import crafttweaker.annotations.ZenRegister;
 import stanhebben.zenscript.annotations.ZenClass;
@@ -27,16 +27,20 @@ public class SetTweaks {
 
 	@ZenMethod
 	public static void addEquipToSet(String setName, String slot, String[] equipsRL) {
+
 		for (String equipRL : equipsRL) {
 			ScriptLoader.enqueue(() -> SetTweaksCore.addEquipToSetCore(setName, slot, equipRL));
 		}
+
 	}
 
 	@ZenMethod
 	public static void addEquipToSet(String setName, int slot, String[] equipsRL) {
+
 		for (String equipRL : equipsRL) {
 			ScriptLoader.enqueue(() -> SetTweaksCore.addEquipToSetCore(setName, Integer.toString(slot), equipRL));
 		}
+
 	}
 
 	// ADD BONUS TO SET
@@ -78,7 +82,7 @@ public class SetTweaks {
 
 	@ZenMethod
 	public static void addAttributeModToBonus(String bonusName, String attribute, double amount, String operation) {
-		int operationCode = SetTweaksUtil.parseOperation(operation);
+		int operationCode = ParseUtil.parseOperation(operation);
 		ScriptLoader
 				.enqueue(() -> SetTweaksCore.addAttributeModToBonusCore(bonusName, attribute, amount, operationCode));
 	}

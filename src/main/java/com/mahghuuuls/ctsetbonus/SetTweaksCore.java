@@ -13,7 +13,7 @@ import com.mahghuuuls.ctsetbonus.slotaccumulator.SlotAccum;
 import com.mahghuuuls.ctsetbonus.slotaccumulator.SlotAccumulators;
 import com.mahghuuuls.ctsetbonus.util.ParseUtil;
 import com.mahghuuuls.ctsetbonus.util.ServerDataUtil;
-import com.mahghuuuls.ctsetbonus.util.SetTweaksUtil;
+import com.mahghuuuls.ctsetbonus.util.SideUtil;
 
 import crafttweaker.CraftTweakerAPI;
 
@@ -21,7 +21,7 @@ public class SetTweaksCore {
 
 	public static void addEquipToSetCore(String setName, String slotPart, String equipRL) {
 
-		if (SetTweaksUtil.instanceIsClient()) {
+		if (SideUtil.instanceIsClient()) {
 			return;
 		}
 
@@ -62,7 +62,7 @@ public class SetTweaksCore {
 	public static void addBonusToSetCore(String bonusName, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
 
-		if (SetTweaksUtil.instanceIsClient()) {
+		if (SideUtil.instanceIsClient()) {
 			return;
 		}
 
@@ -110,7 +110,7 @@ public class SetTweaksCore {
 	public static void addPotionEffectToBonusCore(String bonusName, String effectRL, int level, int duration,
 			int interval) {
 
-		if (SetTweaksUtil.instanceIsClient()) {
+		if (SideUtil.instanceIsClient()) {
 			return;
 		}
 
@@ -128,7 +128,7 @@ public class SetTweaksCore {
 			return;
 		}
 
-		SetTweaksUtil.attachElementToBonus(serverBonus, potionElement);
+		ServerDataUtil.attachElementToBonus(serverBonus, potionElement);
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added potion " + effectRL + " (lvl=" + level + ", dur=" + duration
 				+ ", interval=" + interval + ") to bonus '" + bonusName + "'");
@@ -137,7 +137,7 @@ public class SetTweaksCore {
 	public static void addAttributeModToBonusCore(String bonusName, String attribute, double amount,
 			int operationCode) {
 
-		if (SetTweaksUtil.instanceIsClient()) {
+		if (SideUtil.instanceIsClient()) {
 			return;
 		}
 
@@ -155,7 +155,7 @@ public class SetTweaksCore {
 			return;
 		}
 
-		SetTweaksUtil.attachElementToBonus(serverBonus, attModElement);
+		ServerDataUtil.attachElementToBonus(serverBonus, attModElement);
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added attribute " + attribute + " = " + amount + " @ " + operationCode
 				+ " to bonus '" + bonusName + "'");
@@ -164,8 +164,9 @@ public class SetTweaksCore {
 	public static void addEnchantmentToBonusCore(String bonusName, String slot, String equipRL, String enchantRL,
 			int level, int mode) {
 
-		if (SetTweaksUtil.instanceIsClient())
+		if (SideUtil.instanceIsClient()) {
 			return;
+		}
 
 		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
 		if (serverBonus == null) {
@@ -196,9 +197,10 @@ public class SetTweaksCore {
 		if (enchantElement == null) {
 			CraftTweakerAPI.logError(
 					"CTSetBonus: failed to build enchantment element from '" + parseableEnchantmentBonus + "'");
+			return;
 		}
 
-		SetTweaksUtil.attachElementToBonus(serverBonus, enchantElement);
+		ServerDataUtil.attachElementToBonus(serverBonus, enchantElement);
 
 		CraftTweakerAPI.logInfo("CTSetBonus: Added enchant " + enchantRL + " (lvl=" + level + ", mode=" + mode
 				+ ") to bonus '" + bonusName);

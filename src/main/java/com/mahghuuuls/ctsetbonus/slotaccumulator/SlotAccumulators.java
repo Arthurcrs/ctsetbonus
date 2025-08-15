@@ -17,6 +17,7 @@ public class SlotAccumulators {
 	public static SlotAccum getOrCreateAccum(String setName, String slot) {
 		String key = generateKey(setName, slot);
 		SlotAccum slotAccumulator = SlotAccumulators.SLOT_ACCUMULATORS.get(key);
+
 		if (slotAccumulator == null) {
 			slotAccumulator = new SlotAccum(setName, slot);
 			slotAccumulator.set = ServerDataUtil.getSet(setName);

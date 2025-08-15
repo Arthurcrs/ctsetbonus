@@ -2,6 +2,7 @@ package com.mahghuuuls.ctsetbonus.util;
 
 import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
+import com.fantasticsource.setbonus.common.bonuselements.ABonusElement;
 import com.fantasticsource.setbonus.common.bonusrequirements.ABonusRequirement;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Equip;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Set;
@@ -15,29 +16,35 @@ public class ServerDataUtil {
 
 	public static Equip getEquip(String equipRL) {
 		String equipId = IdFormatter.getEquipIdFromRL(equipRL);
+
 		for (Equip equip : SetBonusData.SERVER_DATA.equipment) {
 			if (equipId.equals(equip.id)) {
 				return equip;
 			}
 		}
+
 		return null;
 	}
 
 	public static Set getSet(String setName) {
 		String setId = IdFormatter.getSetIdFromName(setName);
+
 		for (Set set : SetBonusData.SERVER_DATA.sets) {
 			if (setId.equals(set.id))
 				return set;
 		}
+
 		return null;
 	}
 
 	public static ServerBonus getBonus(String bonusName) {
+
 		String bonusId = IdFormatter.getBonusIdFromName(bonusName);
 		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
 			if (bonusId.equals(bonus.id) && bonus instanceof ServerBonus)
 				return (ServerBonus) bonus;
 		}
+
 		return null;
 	}
 
@@ -78,7 +85,6 @@ public class ServerDataUtil {
 
 	public static void addBonus(String bonusName, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
-		bonusDescription = SetTweaksUtil.cleanBonusDescription(bonusDescription);
 		String parseableBonus = ParseUtil.getParseableBonus(bonusName, bonusDescription, setName, numberOfParts,
 				discoveryMode);
 		Bonus createdBonus = Bonus.getInstance(parseableBonus, SetBonusData.SERVER_DATA);
@@ -86,6 +92,7 @@ public class ServerDataUtil {
 		if (createdBonus == null) {
 			CraftTweakerAPI
 					.logError("CTSetBonus: failed to create bonus '" + bonusName + "' from '" + parseableBonus + "'");
+			return;
 		}
 
 		SetBonusData.SERVER_DATA.bonuses.add(createdBonus);
@@ -111,6 +118,11 @@ public class ServerDataUtil {
 		}
 
 		return false;
+	}
+
+	public static boolean attachElementToBonus(ServerBonus serverBonus, ABonusElement bonusElem) {
+		serverBonus.bonusElements.add(bonusElem);
+		return true;
 	}
 
 }
