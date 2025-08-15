@@ -90,6 +90,13 @@ public class SetTweaks {
 	// ADD ENCHANTMENT ELEMENT TO BONUS
 
 	@ZenMethod
+	public static void addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL,
+			int level) {
+		ScriptLoader
+				.enqueue(() -> SetTweaksCore.addEnchantmentToBonusCore(bonusName, slot, equipRL, enchantRL, level, 0));
+	}
+
+	@ZenMethod
 	public static void addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL, int level,
 			int mode) {
 		ScriptLoader.enqueue(
