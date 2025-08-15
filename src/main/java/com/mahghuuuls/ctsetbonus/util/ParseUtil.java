@@ -54,6 +54,7 @@ public class ParseUtil {
 
 	public static int parseOperation(String operation) {
 		operation = operation.replace(" ", "");
+		operation = operation.toLowerCase();
 
 		switch (operation) {
 		case "add":
@@ -72,6 +73,7 @@ public class ParseUtil {
 
 	public static int parseEnchantMode(String mode) {
 		mode = mode.replace(" ", "");
+		mode = mode.toLowerCase();
 
 		switch (mode) {
 		case "vanilla":

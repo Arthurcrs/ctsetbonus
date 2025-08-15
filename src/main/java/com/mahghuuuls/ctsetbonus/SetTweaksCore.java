@@ -165,6 +165,11 @@ public class SetTweaksCore {
 			return;
 		}
 
+		if (mode < 0 || mode > 4) {
+			CraftTweakerAPI.logError("CTSetBonus: Invalid discovery enchantment mode code '" + mode + "'");
+			return;
+		}
+
 		ServerBonus serverBonus = ServerDataUtil.getBonus(bonusName);
 		if (serverBonus == null) {
 			return;
