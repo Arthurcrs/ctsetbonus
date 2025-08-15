@@ -103,4 +103,12 @@ public class SetTweaks {
 				() -> SetTweaksCore.addEnchantmentToBonusCore(bonusName, slot, equipRL, enchantRL, level, mode));
 	}
 
+	@ZenMethod
+	public static void addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL, int level,
+			String mode) {
+		int modeCode = ParseUtil.parseOperation(mode);
+		ScriptLoader.enqueue(
+				() -> SetTweaksCore.addEnchantmentToBonusCore(bonusName, slot, equipRL, enchantRL, level, modeCode));
+	}
+
 }
