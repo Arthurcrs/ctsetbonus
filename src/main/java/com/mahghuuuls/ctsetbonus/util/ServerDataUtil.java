@@ -120,9 +120,8 @@ public class ServerDataUtil {
 		return false;
 	}
 
-	public static boolean attachElementToBonus(ServerBonus serverBonus, ABonusElement bonusElem) {
+	public static void attachElementToBonus(ServerBonus serverBonus, ABonusElement bonusElem) {
 		serverBonus.bonusElements.add(bonusElem);
-		return true;
 	}
 
 }

@@ -54,7 +54,6 @@ public class SetTweaksCore {
 
 		slotAccumulator.set.slotData.add(slotData);
 		slotAccumulator.slotData = slotData;
-
 		CraftTweakerAPI.logInfo("CTSetBonus: Added " + slotAccumulator.equipIds.size() + " option(s) to "
 				+ slotAccumulator.setName + " at slot " + slotAccumulator.slotKey);
 	}
@@ -129,7 +128,6 @@ public class SetTweaksCore {
 		}
 
 		ServerDataUtil.attachElementToBonus(serverBonus, potionElement);
-
 		CraftTweakerAPI.logInfo("CTSetBonus: Added potion " + effectRL + " (lvl=" + level + ", dur=" + duration
 				+ ", interval=" + interval + ") to bonus '" + bonusName + "'");
 	}
@@ -156,7 +154,6 @@ public class SetTweaksCore {
 		}
 
 		ServerDataUtil.attachElementToBonus(serverBonus, attModElement);
-
 		CraftTweakerAPI.logInfo("CTSetBonus: Added attribute " + attribute + " = " + amount + " @ " + operationCode
 				+ " to bonus '" + bonusName + "'");
 	}
@@ -180,7 +177,6 @@ public class SetTweaksCore {
 		}
 
 		String parseableSlotData = ParseUtil.getParseableSlotData(equipRL, slot);
-
 		SlotData slotData = SlotData.getInstance(parseableSlotData, SetBonusData.SERVER_DATA);
 
 		if (slotData == null) {
@@ -201,7 +197,6 @@ public class SetTweaksCore {
 		}
 
 		ServerDataUtil.attachElementToBonus(serverBonus, enchantElement);
-
 		CraftTweakerAPI.logInfo("CTSetBonus: Added enchant " + enchantRL + " (lvl=" + level + ", mode=" + mode
 				+ ") to bonus '" + bonusName);
 	}
