@@ -1,7 +1,5 @@
 package com.mahghuuuls.ctsetbonus.util;
 
-import java.util.Locale;
-
 import crafttweaker.CraftTweakerAPI;
 
 public class ParseUtil {
@@ -19,7 +17,7 @@ public class ParseUtil {
 			int discoveryMode) {
 		String bonusId = IdFormatter.getBonusIdFromName(bonusName);
 		String safeDescription = cleanBonusDescription(bonusDescription);
-		String requirementSpec = getParseableRequirement(setName, numberOfParts);
+		String requirementSpec = getParseableSetRequirement(setName, numberOfParts);
 		return bonusId + ", " + safeDescription + ", " + discoveryMode + ", " + requirementSpec;
 	}
 
@@ -29,7 +27,7 @@ public class ParseUtil {
 		return slot + "=" + equipId;
 	}
 
-	public static String getParseableRequirement(String setName, int numberOfParts) {
+	public static String getParseableSetRequirement(String setName, int numberOfParts) {
 		String setId = IdFormatter.getSetIdFromName(setName);
 		return (numberOfParts > 0) ? (setId + "." + numberOfParts) : setId;
 	}
@@ -54,35 +52,45 @@ public class ParseUtil {
 		return bonusId + ", " + getParseableSlotData(equipRL, slot) + ", " + enchantRL + "." + level + "." + mode;
 	}
 
-	/**
-	 * Parses attribute modifier operation from string or number. Accepts add |
-	 * mult_base | mult_total (or 0|1|2). Defaults to add with an error log on
-	 * unknown inputs.
-	 */
 	public static int parseOperation(String operation) {
+		operation = operation.replace(" ", "");
+		operation = operation.toLowerCase();
 
-		if (operation == null) {
-			return 0;
-		}
-
-		switch (operation.trim().toLowerCase(Locale.ROOT)) {
+		switch (operation) {
 		case "add":
 			return 0; // + amount
 		case "mult_base":
 			return 1; // + base * amount
 		case "mult_total":
 			return 2; // * (1 + amount)
-		default:
-			try {
-				int operationInt = Integer.parseInt(operation);
-				if (operationInt >= 0 && operationInt <= 2)
-					return operationInt;
-			} catch (NumberFormatException ignored) {
-			}
-			CraftTweakerAPI.logError("CTSetBonus: unknown attribute operation '" + operation
-					+ "'. Use add | mult_base | mult_total (defaulting to add).");
-			return 0;
 		}
+
+		CraftTweakerAPI.logError("CTSetBonus: unknown attribute operation (defaulting to add) '" + operation
+				+ "'. Options are: add | mult_base | mult_total");
+		return 0;
+
+	}
+
+	public static int parseEnchantMode(String mode) {
+		mode = mode.replace(" ", "");
+		mode = mode.toLowerCase();
+
+		switch (mode) {
+		case "vanilla":
+			return 0;
+		case "vanilla_unlimited":
+			return 1;
+		case "override":
+			return 2;
+		case "additive":
+			return 3;
+		case "additive_unlimited":
+			return 4;
+		}
+
+		CraftTweakerAPI.logError("CTSetBonus: unknown enchantment mode (defaulting to vanilla behavior) '" + mode
+				+ "'. Options are: vanilla | vanilla_unlimited | override | additive | additive_unlimited");
+		return 0;
 
 	}
 

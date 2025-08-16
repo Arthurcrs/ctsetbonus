@@ -36,6 +36,7 @@ public final class ScriptLoader {
 				CraftTweakerAPI.logError("CTSetBonus: deferred task failed", t);
 			}
 		}
+
 		SlotAccumulators.clear();
 		CraftTweakerAPI.logInfo("CTSetBonus: applied " + numActionsApplied + " queued script actions on SERVER");
 	}

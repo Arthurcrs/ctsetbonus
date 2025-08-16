@@ -54,13 +54,12 @@ public class SetTweaksCore {
 
 		slotAccumulator.set.slotData.add(slotData);
 		slotAccumulator.slotData = slotData;
-
 		CraftTweakerAPI.logInfo("CTSetBonus: Added " + slotAccumulator.equipIds.size() + " option(s) to "
 				+ slotAccumulator.setName + " at slot " + slotAccumulator.slotKey);
 	}
 
-	public static void addBonusToSetCore(String bonusName, String bonusDescription, String setName, int numberOfParts,
-			int discoveryMode) {
+	public static void addSetReqToBonusCore(String bonusName, String bonusDescription, String setName,
+			int numberOfParts, int discoveryMode) {
 
 		if (SideUtil.instanceIsClient()) {
 			return;
@@ -86,7 +85,7 @@ public class SetTweaksCore {
 			return;
 		}
 
-		String parseableRequirement = ParseUtil.getParseableRequirement(setName, numberOfParts);
+		String parseableRequirement = ParseUtil.getParseableSetRequirement(setName, numberOfParts);
 		ABonusRequirement bonusReq = ABonusRequirement.parse(parseableRequirement, SetBonusData.SERVER_DATA.sets);
 
 		if (bonusReq == null) {
@@ -129,7 +128,6 @@ public class SetTweaksCore {
 		}
 
 		ServerDataUtil.attachElementToBonus(serverBonus, potionElement);
-
 		CraftTweakerAPI.logInfo("CTSetBonus: Added potion " + effectRL + " (lvl=" + level + ", dur=" + duration
 				+ ", interval=" + interval + ") to bonus '" + bonusName + "'");
 	}
@@ -156,7 +154,6 @@ public class SetTweaksCore {
 		}
 
 		ServerDataUtil.attachElementToBonus(serverBonus, attModElement);
-
 		CraftTweakerAPI.logInfo("CTSetBonus: Added attribute " + attribute + " = " + amount + " @ " + operationCode
 				+ " to bonus '" + bonusName + "'");
 	}
@@ -165,6 +162,11 @@ public class SetTweaksCore {
 			int level, int mode) {
 
 		if (SideUtil.instanceIsClient()) {
+			return;
+		}
+
+		if (mode < 0 || mode > 4) {
+			CraftTweakerAPI.logError("CTSetBonus: Invalid discovery enchantment mode code '" + mode + "'");
 			return;
 		}
 
@@ -180,7 +182,6 @@ public class SetTweaksCore {
 		}
 
 		String parseableSlotData = ParseUtil.getParseableSlotData(equipRL, slot);
-
 		SlotData slotData = SlotData.getInstance(parseableSlotData, SetBonusData.SERVER_DATA);
 
 		if (slotData == null) {
@@ -201,7 +202,6 @@ public class SetTweaksCore {
 		}
 
 		ServerDataUtil.attachElementToBonus(serverBonus, enchantElement);
-
 		CraftTweakerAPI.logInfo("CTSetBonus: Added enchant " + enchantRL + " (lvl=" + level + ", mode=" + mode
 				+ ") to bonus '" + bonusName);
 	}

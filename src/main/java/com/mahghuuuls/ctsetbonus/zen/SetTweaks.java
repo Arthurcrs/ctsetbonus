@@ -46,21 +46,21 @@ public class SetTweaks {
 	// ADD BONUS TO SET
 
 	@ZenMethod
-	public static void addBonusToSet(String bonusName, String bonusDescription, String setName) {
-		ScriptLoader.enqueue(() -> SetTweaksCore.addBonusToSetCore(bonusName, bonusDescription, setName, -1, 1));
+	public static void addSetReqToBonus(String bonusName, String bonusDescription, String setName) {
+		ScriptLoader.enqueue(() -> SetTweaksCore.addSetReqToBonusCore(bonusName, bonusDescription, setName, -1, 1));
 	}
 
 	@ZenMethod
-	public static void addBonusToSet(String bonusName, String bonusDescription, String setName, int numberOfParts) {
-		ScriptLoader
-				.enqueue(() -> SetTweaksCore.addBonusToSetCore(bonusName, bonusDescription, setName, numberOfParts, 1));
+	public static void addSetReqToBonus(String bonusName, String bonusDescription, String setName, int numberOfParts) {
+		ScriptLoader.enqueue(
+				() -> SetTweaksCore.addSetReqToBonusCore(bonusName, bonusDescription, setName, numberOfParts, 1));
 	}
 
 	@ZenMethod
-	public static void addBonusToSet(String bonusName, String bonusDescription, String setName, int numberOfParts,
+	public static void addSetReqToBonus(String bonusName, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
-		ScriptLoader.enqueue(() -> SetTweaksCore.addBonusToSetCore(bonusName, bonusDescription, setName, numberOfParts,
-				discoveryMode));
+		ScriptLoader.enqueue(() -> SetTweaksCore.addSetReqToBonusCore(bonusName, bonusDescription, setName,
+				numberOfParts, discoveryMode));
 	}
 
 	// ADD POTION EFFECT ELEMENT TO BONUS
@@ -90,10 +90,25 @@ public class SetTweaks {
 	// ADD ENCHANTMENT ELEMENT TO BONUS
 
 	@ZenMethod
+	public static void addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL,
+			int level) {
+		ScriptLoader
+				.enqueue(() -> SetTweaksCore.addEnchantmentToBonusCore(bonusName, slot, equipRL, enchantRL, level, 0));
+	}
+
+	@ZenMethod
 	public static void addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL, int level,
 			int mode) {
 		ScriptLoader.enqueue(
 				() -> SetTweaksCore.addEnchantmentToBonusCore(bonusName, slot, equipRL, enchantRL, level, mode));
+	}
+
+	@ZenMethod
+	public static void addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL, int level,
+			String mode) {
+		int modeCode = ParseUtil.parseOperation(mode);
+		ScriptLoader.enqueue(
+				() -> SetTweaksCore.addEnchantmentToBonusCore(bonusName, slot, equipRL, enchantRL, level, modeCode));
 	}
 
 }
