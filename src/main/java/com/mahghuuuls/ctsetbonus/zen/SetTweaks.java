@@ -46,22 +46,24 @@ public class SetTweaks {
 	// ADD BONUS TO SET
 
 	@ZenMethod
-	public static void addBonusToSet(String bonusName, String bonusDescription, String setName) {
-		ScriptLoader.enqueue(() -> SetTweaksCore.addBonusToSetCore(bonusName, bonusDescription, setName, -1, 1));
+	public static void addSetReqToBonus(String bonusName, String bonusDescription, String setName) {
+		ScriptLoader.enqueue(() -> SetTweaksCore.addSetReqToBonusCore(bonusName, bonusDescription, setName, -1, 1));
 	}
 
 	@ZenMethod
-	public static void addBonusToSet(String bonusName, String bonusDescription, String setName, int numberOfParts) {
-		ScriptLoader
-				.enqueue(() -> SetTweaksCore.addBonusToSetCore(bonusName, bonusDescription, setName, numberOfParts, 1));
+	public static void addSetReqToBonus(String bonusName, String bonusDescription, String setName, int numberOfParts) {
+		ScriptLoader.enqueue(
+				() -> SetTweaksCore.addSetReqToBonusCore(bonusName, bonusDescription, setName, numberOfParts, 1));
 	}
 
 	@ZenMethod
-	public static void addBonusToSet(String bonusName, String bonusDescription, String setName, int numberOfParts,
+	public static void addSetReqToBonus(String bonusName, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
-		ScriptLoader.enqueue(() -> SetTweaksCore.addBonusToSetCore(bonusName, bonusDescription, setName, numberOfParts,
-				discoveryMode));
+		ScriptLoader.enqueue(() -> SetTweaksCore.addSetReqToBonusCore(bonusName, bonusDescription, setName,
+				numberOfParts, discoveryMode));
 	}
+
+	// TODO: addAttributeReqToBonus()
 
 	// ADD POTION EFFECT ELEMENT TO BONUS
 

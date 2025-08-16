@@ -58,7 +58,7 @@ public class SetTweaksCore {
 				+ slotAccumulator.setName + " at slot " + slotAccumulator.slotKey);
 	}
 
-	public static void addBonusToSetCore(String bonusName, String bonusDescription, String setName, int numberOfParts,
+	public static void addSetReqToBonusCore(String bonusName, String bonusDescription, String setName, int numberOfParts,
 			int discoveryMode) {
 
 		if (SideUtil.instanceIsClient()) {
