@@ -91,21 +91,21 @@ SB.addEquipToSet("MixedBoots", 36, boots);
 
 ---
 
-## Methods to Link Bonuses to Sets
+## Methods add Set requirements to Bonus
 
-### addBonusToSet(String bonusName, String bonusDescription, String setName)
-Links a bonus to a full set (with discovery method set to "always visible"). Creates the bonus if missing.
+### addSetReqToBonus(String bonusName, String bonusDescription, String setName)
+Adds a Full Set as a requirement to a Bonus (with discovery method set to "always visible"). Creates the bonus if missing.
 ```zenscript
-SB.addBonusToSet("diamondFull", "Unbreakable poise", "Diamond");
+SB.addSetReqToBonus("diamondFull", "Unbreakable poise", "Diamond");
 ```
 
-### addBonusToSet(String bonusName, String bonusDescription, String setName, int numberOfParts)
-Links a bonus that activates at a specific piece count (also with discovery method "always visible").
+### addSetReqToBonus(String bonusName, String bonusDescription, String setName, int numberOfParts)
+Adds a specific number of items of a Set as a requirement for a Bonus (also with discovery method "always visible").
 ```zenscript
-SB.addBonusToSet("iron2pc", "Steadfast", "Iron", 2);
+SB.addSetReqToBonus("iron2pc", "Steadfast", "Iron", 2);
 ```
 
-### addBonusToSet(String bonusName, String bonusDescription, String setName, int numberOfParts, int discoveryMode)
+### addSetReqToBonus(String bonusName, String bonusDescription, String setName, int numberOfParts, int discoveryMode)
 Adds with explicit discovery mode:  
 0 = hidden until the player has activated the bonus at least once  
 1 = always visible  
@@ -113,7 +113,7 @@ Adds with explicit discovery mode:
 
 To require the entire set, use `-1` for `numberOfParts`.
 ```zenscript
-SB.addBonusToSet("goldFull", "Gilded vigor", "Gold", -1, 1); // full set, visible
+SB.addSetReqToBonus("goldFull", "Gilded vigor", "Gold", -1, 1); // full set, visible
 ```
 
 ---
@@ -138,6 +138,13 @@ Adds an attribute modifier. Operation: "add", "mult_base", "mult_total".
 SB.addAttributeModToBonus("diamondFull", "generic.armor", 0.20, "mult_base");
 ```
 
+### addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL, int level)
+Applies an enchantment to a specific item in the slot using the vanilla enchantment combination behavior.
+
+```zenscript
+SB.addEnchantmentToBonus("goldFull", "mainhand", "minecraft:golden_sword", "minecraft:fire_aspect", 1);
+```
+
 ### addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL, int level, int mode)
 Applies an enchantment to a specific item in the slot, with a given mode:  
 0 = Vanilla enchantment combination behavior  
@@ -148,4 +155,16 @@ Applies an enchantment to a specific item in the slot, with a given mode:
 
 ```zenscript
 SB.addEnchantmentToBonus("goldFull", "mainhand", "minecraft:golden_sword", "minecraft:fire_aspect", 1, 4);
+```
+
+### addEnchantmentToBonus(String bonusName, String slot, String equipRL, String enchantRL, int level, String mode)
+Same thing as the previous, but using a String instead of a code.
+"vanilla" = Vanilla enchantment combination behavior  
+"vanilla_unlimited" = Vanilla behavior, but without limits (can go above max level)  
+"override" = Set the level directly, overriding whatever level it might've had before  
+"additive" = Add to the existing level (can be used to subtract from existing level if you put in a negative level number)  
+"additive_unlimited" = Add to existing level, without limits  
+
+```zenscript
+SB.addEnchantmentToBonus("goldFull", "mainhand", "minecraft:golden_sword", "minecraft:fire_aspect", 1, "vanilla_unlimited");
 ```

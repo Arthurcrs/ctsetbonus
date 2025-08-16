@@ -63,8 +63,6 @@ public class SetTweaks {
 				numberOfParts, discoveryMode));
 	}
 
-	// TODO: addAttributeReqToBonus()
-
 	// ADD POTION EFFECT ELEMENT TO BONUS
 
 	@ZenMethod

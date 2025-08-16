@@ -58,8 +58,8 @@ public class SetTweaksCore {
 				+ slotAccumulator.setName + " at slot " + slotAccumulator.slotKey);
 	}
 
-	public static void addSetReqToBonusCore(String bonusName, String bonusDescription, String setName, int numberOfParts,
-			int discoveryMode) {
+	public static void addSetReqToBonusCore(String bonusName, String bonusDescription, String setName,
+			int numberOfParts, int discoveryMode) {
 
 		if (SideUtil.instanceIsClient()) {
 			return;
@@ -85,7 +85,7 @@ public class SetTweaksCore {
 			return;
 		}
 
-		String parseableRequirement = ParseUtil.getParseableRequirement(setName, numberOfParts);
+		String parseableRequirement = ParseUtil.getParseableSetRequirement(setName, numberOfParts);
 		ABonusRequirement bonusReq = ABonusRequirement.parse(parseableRequirement, SetBonusData.SERVER_DATA.sets);
 
 		if (bonusReq == null) {

@@ -17,7 +17,7 @@ public class ParseUtil {
 			int discoveryMode) {
 		String bonusId = IdFormatter.getBonusIdFromName(bonusName);
 		String safeDescription = cleanBonusDescription(bonusDescription);
-		String requirementSpec = getParseableRequirement(setName, numberOfParts);
+		String requirementSpec = getParseableSetRequirement(setName, numberOfParts);
 		return bonusId + ", " + safeDescription + ", " + discoveryMode + ", " + requirementSpec;
 	}
 
@@ -27,7 +27,7 @@ public class ParseUtil {
 		return slot + "=" + equipId;
 	}
 
-	public static String getParseableRequirement(String setName, int numberOfParts) {
+	public static String getParseableSetRequirement(String setName, int numberOfParts) {
 		String setId = IdFormatter.getSetIdFromName(setName);
 		return (numberOfParts > 0) ? (setId + "." + numberOfParts) : setId;
 	}
