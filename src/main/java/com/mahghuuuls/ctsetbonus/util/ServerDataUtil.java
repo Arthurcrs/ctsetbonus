@@ -17,6 +17,10 @@ public class ServerDataUtil {
 	public static Equip getEquip(String equipRL) {
 		String equipId = IdFormatter.getEquipIdFromRL(equipRL);
 
+		if (!IdRegistry.equipIdWasAdded(equipId)) {
+			return null;
+		}
+
 		for (Equip equip : SetBonusData.SERVER_DATA.equipment) {
 			if (equipId.equals(equip.id)) {
 				return equip;
@@ -29,6 +33,10 @@ public class ServerDataUtil {
 	public static Set getSet(String setName) {
 		String setId = IdFormatter.getSetIdFromName(setName);
 
+		if (!IdRegistry.setIdWasAdded(setId)) {
+			return null;
+		}
+
 		for (Set set : SetBonusData.SERVER_DATA.sets) {
 			if (setId.equals(set.id))
 				return set;
@@ -40,6 +48,11 @@ public class ServerDataUtil {
 	public static ServerBonus getBonus(String bonusName) {
 
 		String bonusId = IdFormatter.getBonusIdFromName(bonusName);
+
+		if (!IdRegistry.bonusIdWasAdded(bonusId)) {
+			return null;
+		}
+
 		for (Bonus bonus : SetBonusData.SERVER_DATA.bonuses) {
 			if (bonusId.equals(bonus.id) && bonus instanceof ServerBonus)
 				return (ServerBonus) bonus;
@@ -54,6 +67,7 @@ public class ServerDataUtil {
 
 		if (createdEquip != null) {
 			SetBonusData.SERVER_DATA.equipment.add(createdEquip);
+			IdRegistry.addEquip(equipRL);
 			CraftTweakerAPI.logInfo("CTSetBonus: New equip added : " + parseableEquip);
 		}
 
@@ -80,6 +94,7 @@ public class ServerDataUtil {
 		}
 
 		slotAcc.slotData = createdSet.slotData.get(createdSet.slotData.size() - 1);
+		IdRegistry.addSet(slotAcc.setName);
 		CraftTweakerAPI.logInfo("CTSetBonus: New set added " + slotAcc.setName + " (" + slotAcc.setId + ")");
 	}
 
@@ -96,6 +111,7 @@ public class ServerDataUtil {
 		}
 
 		SetBonusData.SERVER_DATA.bonuses.add(createdBonus);
+		IdRegistry.addBonus(bonusName);
 		CraftTweakerAPI.logInfo("CTSetBonus: New bonus added : " + bonusName);
 	}
 
