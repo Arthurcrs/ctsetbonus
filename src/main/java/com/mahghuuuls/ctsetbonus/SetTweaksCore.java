@@ -80,8 +80,9 @@ public class SetTweaksCore {
 
 		if (serverBonus == null) {
 			ServerDataUtil.addBonus(bonusName, bonusDescription, setName, numberOfParts, discoveryMode);
-			CraftTweakerAPI.logInfo("CTSetBonus: Linked bonus '" + bonusName + "' -> set '" + setName + "' (pieces="
-					+ (numberOfParts > 0 ? numberOfParts : "FULL") + ", mode=" + discoveryMode + ")");
+			CraftTweakerAPI.logInfo("CTSetBonus: Added the set '" + setName + "' as a requirement for the bonus '"
+					+ bonusName + "'. (pieces=" + (numberOfParts > 0 ? numberOfParts : "FULL") + ", mode="
+					+ discoveryMode + ")");
 			return;
 		}
 

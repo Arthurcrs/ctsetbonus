@@ -4,6 +4,7 @@ import com.fantasticsource.setbonus.SetBonusData;
 import com.fantasticsource.setbonus.common.Bonus;
 import com.fantasticsource.setbonus.common.bonusrequirements.setrequirement.Set;
 import com.fantasticsource.setbonus.server.ServerBonus;
+import com.mahghuuuls.ctsetbonus.cooldowntracker.CooldownTracker;
 import com.mahghuuuls.ctsetbonus.util.IdFormatter;
 import com.mahghuuuls.ctsetbonus.util.SideUtil;
 
@@ -65,4 +66,17 @@ public class IPlayerExpansions {
 
 		return 0;
 	}
+
+	@ZenMethod
+	public static void startCooldown(IPlayer iPlayer, String cooldownId, int duration) {
+		CooldownTracker.startCooldown(iPlayer.getUUID(), cooldownId, duration);
+
+	}
+
+	@ZenMethod
+	public static boolean onCooldown(IPlayer iPlayer, String cooldownId) {
+
+		return CooldownTracker.onCooldown(iPlayer.getUUID(), cooldownId);
+	}
+
 }
