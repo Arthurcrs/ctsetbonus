@@ -15,7 +15,6 @@ public class IEntityExpansions {
 
 	@ZenMethod
 	public static IPlayer asIPlayer(IEntity iEntity) {
-
 		Entity entity = CraftTweakerMC.getEntity(iEntity);
 
 		if (entity instanceof EntityPlayerMP) {

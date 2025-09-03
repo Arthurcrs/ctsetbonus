@@ -12,8 +12,8 @@ public class CooldownTracker {
 
 	public static void startCooldown(String playerId, String cooldownId, long durationTicks) {
 		long currentTime = getServerTicks();
-		CooldownKey key = new CooldownKey(playerId, cooldownId);
-		activeCooldowns.put(key, new CooldownData(durationTicks, currentTime));
+		CooldownKey cooldownKey = new CooldownKey(playerId, cooldownId);
+		activeCooldowns.put(cooldownKey, new CooldownData(durationTicks, currentTime));
 	}
 
 	public static boolean onCooldown(String playerId, String cooldownId) {

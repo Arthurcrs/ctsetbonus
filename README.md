@@ -18,6 +18,25 @@ I made some basic testing and it seems to be fine. If you have any suggestion or
 
 ---
 
+## IEntity Extensions
+
+### asIPlayer()
+Return a IPlayer if the entity is a player, or "null" if it is not. This is useful to use in Entity events. Remember to add a return statement in the scripts in cases of null.
+
+```zenscript
+events.onEntityLivingHurt(function(event as EntityLivingHurtEvent) {
+        val attacker = event.damageSource.getTrueSource();
+
+        val player = attacker.asIPlayer();
+        if (isNull(player)) {
+            return;
+        }
+    }
+);
+```
+
+---
+
 ## IPlayer Extensions
 
 ### hasSetBonus(String bonusName)
@@ -40,6 +59,33 @@ events.onPlayerAttackEntity(function(event as PlayerAttackEntityEvent) {
     val count = attacker.getSetPieceCount("Diamond");
     attacker.sendChat("Diamond pieces: " + count);
 });
+```
+
+### startCooldown(String cooldownId, long durationTicks)
+
+Utility method to add a cooldown timer to a effect. The cooldownId identifies the cooldown timer.
+
+### onCooldown(String cooldownId)
+
+Returns true if the timer given by the id is on cooldown for that player.
+
+```zenscript
+events.onEntityLivingHurt(function(event as EntityLivingHurtEvent) {
+        val attacker = event.damageSource.getTrueSource();
+
+        val player = attacker.asIPlayer();
+        if (isNull(player)) {
+            return;
+        }
+
+        if (player.hasSetBonus(bonusName) && !player.onCooldown(bonusName)) {
+            if (!player.onGround) {
+                player.startCooldown(bonusName, 200);
+                player.sendChat("Cooldown Started");
+            }
+        }
+    }
+);
 ```
 
 ---
@@ -168,3 +214,7 @@ Same thing as the previous, but using a String instead of a code.
 ```zenscript
 SB.addEnchantmentToBonus("goldFull", "mainhand", "minecraft:golden_sword", "minecraft:fire_aspect", 1, "vanilla_unlimited");
 ```
+
+---
+
+## Examples

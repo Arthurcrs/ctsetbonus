@@ -22,6 +22,7 @@ public class IPlayerExpansions {
 
 	@ZenMethod
 	public static boolean hasSetBonus(IPlayer iPlayer, String bonusName) {
+
 		if (SideUtil.instanceIsClient()) {
 			return false;
 		}
@@ -46,6 +47,7 @@ public class IPlayerExpansions {
 
 	@ZenMethod
 	public static int getSetPieceCount(IPlayer iPlayer, String setName) {
+
 		if (SideUtil.instanceIsClient()) {
 			return 0;
 		}
@@ -75,7 +77,6 @@ public class IPlayerExpansions {
 
 	@ZenMethod
 	public static boolean onCooldown(IPlayer iPlayer, String cooldownId) {
-
 		return CooldownTracker.onCooldown(iPlayer.getUUID(), cooldownId);
 	}
 
