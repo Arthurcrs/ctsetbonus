@@ -72,7 +72,6 @@ public class IPlayerExpansions {
 	@ZenMethod
 	public static void startCooldown(IPlayer iPlayer, String cooldownId, int duration) {
 		CooldownTracker.startCooldown(iPlayer.getUUID(), cooldownId, duration);
-
 	}
 
 	@ZenMethod
