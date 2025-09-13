@@ -7,10 +7,7 @@ This mod provides some integration between the mod [Set Bonus](https://www.curse
 2.  Provides a method to verify if the player has a current set bonus in a zs script, allowing for more customizable effects, mainly because it can be used in CraftTweaker Events to check if the player has the set bonus then do something.
 3.  Proves a method to get how many set pieces the player has of a given set. This can be used to add "gradual bonuses" such as dealing more damage (for example) the more pieces of a given set the player has.
 
-<br/>
-
-### <span style="color:#E67E23;">About the Beta</span>
-I made some basic testing and it seems to be fine. If you have any suggestion or bugs please point it out. I will be further testing in the following weeks.
+See the "Example" section to get an idea of what is possible with this mod. If you find bugs or there is an additional feature you wish to get implemented, let me know in the comments.
 
 ### <span style="color:#F1C40F;">Warnings</span>
 * Avoid using `/setbonus resetconfig` when sets are defined using scripts. This command clears all sets and reloads only the config file, using it will remove the sets added with scripts.
@@ -167,4 +164,56 @@ Same thing as the previous, but using a String instead of a code.
 
 ```zenscript
 SB.addEnchantmentToBonus("goldFull", "mainhand", "minecraft:golden_sword", "minecraft:fire_aspect", 1, "vanilla_unlimited");
+```
+
+---
+
+## Example
+
+An example using this mod for registering the armor set and giving 2 custom effects: The player gains flying for a few seconds when dealing damage and deals bonus damage when not touching the ground. The method "asIPlayer" is a custom method that I created, but it is not in this mod, and there might be smarter ways to do that. This example is mostly for you to grasp an idea of what is possible using Craft Tweaker.
+
+```zenscript
+import crafttweaker.entity.IEntity;
+import crafttweaker.entity.IEntityLivingBase;
+import crafttweaker.player.IPlayer;
+import crafttweaker.event.EntityLivingHurtEvent;
+import ctsetbonus.SetTweaks as SB;
+
+// BALANCING
+val damageBonusDealt = 5.0;   // magic damage to apply when airborne
+val flyTimeSeconds   = 2;     // flight duration
+
+// NAMES AND DESCRIPTION
+val setName          = "Valkyrie";
+val bonusName        = "Valkyrie Set Bonus";
+val BonusDescription = "When attacking grants flying for " + (flyTimeSeconds as int) +
+    "s and deals " + (damageBonusDealt as int) + " bonus damage while airborne.";
+
+SB.addEquipToSet(setName, "head", "aether_legacy:valkyrie_helmet");
+SB.addEquipToSet(setName, "chest", "aether_legacy:valkyrie_chestplate");
+SB.addEquipToSet(setName, "legs", "aether_legacy:valkyrie_leggings");
+SB.addEquipToSet(setName, "feet", "aether_legacy:valkyrie_boots");
+
+SB.addSetReqToBonus(bonusName, BonusDescription, setName);
+
+events.onEntityLivingHurt(function(event as EntityLivingHurtEvent) {
+    val damageSource = event.damageSource;
+    val attacker = damageSource.getTrueSource();
+
+    if (!(attacker instanceof IPlayer)){
+        return;
+    }
+
+    val player = attacker.asIPlayer();
+
+    if (player.hasSetBonus(bonusName)) {
+        player.addPotionEffect(<potion:potioncore:flight>.makePotionEffect(flyTimeSeconds * 20, 1));
+
+        if (!player.onGround) {
+            event.amount = event.amount + damageBonusDealt;
+        }
+    }
+
+});
+
 ```
